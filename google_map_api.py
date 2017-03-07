@@ -63,10 +63,24 @@ def top_1000_cities_poi(df):
                 print 'DUPS!'
         print city, ' DONE!'
 
+def table_to_csv(table):
+    df =  pd.DataFrame(list(table.find()))
+    df['Name'] = [i['title'] for i in df.properties]
+    df['City'] = [i.split(', ')[0] for i in df.city]
+    df['State'] = [i.split(', ')[1] for i in df.city]
+    df['Coord0'] = [i['coordinates'][0] for i in df.geometry]
+    df['Coord1'] = [i['coordinates'][1] for i in df.geometry]
+    df['POI_rank'] = [i['rank'] for i in df.properties]
+    df['img_url'] = [i['thumbnail_url'] for i in df.properties]
+    df = df.drop(['_id','city','geometry','properties'],axis=1)
+    df.columns = [i.lower() for i in df.columns.values]
+    df.to_csv('poi_places.csv')
+
 if __name__ == '__main__':
     data_path='/Users/zoesh/Desktop/travel_with_friends/top_1000_us_cities.csv'
     df = top_1000_cities(data_path)
     top_1000_cities_poi(df)
+    table_to_csv(table)
 # baseurl = 'https://www.google.com/search?q=ice+bar+stockholm'
 # headers = {'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_10_1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/39.0.2171.95 Safari/537.36'}
 # r = requests.get(baseurl,headers=headers)
