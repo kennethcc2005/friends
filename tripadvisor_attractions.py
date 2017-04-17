@@ -12,7 +12,8 @@ import pickle
 
 db_cilent = MongoClient()
 db = db_cilent['zoeshrm']
-table = db['TripAdvisor']
+# table = db['TripAdvisor']
+table = db['TripAdvisor_state_park']
 
 us_state_abbrev = {
     'Alabama': 'AL',
@@ -120,7 +121,26 @@ def poi_details(poi_url,city):
                 })
         except DuplicateKeyError:
             print 'DUPS!'
-        
+   
+def state_park_details(poi_url):
+    try:
+        r = requests.get(poi_url)
+    except:
+        print 'too fast, take 5 min break'
+        time.sleep(5*60)
+        r = requests.get(poi_url)
+    if r.status_code != 200:
+        print 'WARNING: ', poi_url, r.status_code
+    else:
+        s = BS(r.text, 'html.parser')
+        try:
+            table.insert({'url':poi_url,
+                        'html': s.decode('utf8')
+                })
+        except DuplicateKeyError:
+            print 'DUPS!'
+
+
 def top_1000_cities(data_path):
     df = pd.read_csv(data_path)
     return df
@@ -145,6 +165,8 @@ def top_1000_cities_poi(df):
         pickle.dump(my_list, fp)
 
 if __name__ == '__main__':
-    data_path='/Users/zoesh/Desktop/travel_with_friends/top_1000_us_cities.csv'
-    df = top_1000_cities(data_path)
-    top_1000_cities_poi(df)
+    # data_path='/Users/zoesh/Desktop/travel_with_friends/top_1000_us_cities.csv'
+    # df = top_1000_cities(data_path)
+    # top_1000_cities_poi(df)
+    for poi_url in url_list:
+        state_park_details(poi_url)
