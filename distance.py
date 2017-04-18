@@ -7,14 +7,15 @@ import simplejson
 import urllib
 import config
 import ast
-
 from operator import itemgetter
 from sklearn.cluster import KMeans
 from sqlalchemy import create_engine
-
+from geopy.distance import vincenty
 import math
 import random
 
+def geopy_dist((x1,y1), (x2,y2)):
+    return vincenty((x1,y1), (x2,y2)).miles
 
 def distL2((x1,y1), (x2,y2)):
     """Compute the L2-norm (Euclidean) distance between two points.
