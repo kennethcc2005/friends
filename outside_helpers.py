@@ -1,3 +1,8 @@
+import psycopg2
+import ast
+import numpy as np
+from helpers import *
+conn_str = "dbname='travel_with_friends' user='zoesh' host='localhost'"
 
 def ajax_available_events(county, state):
     county=county.upper()
@@ -9,7 +14,7 @@ def ajax_available_events(county, state):
     conn.close()
     return poi_lst
 
-def add_event(trip_locations_id, event_day, event_id=None, event_name=None, full_day = True, unseen_event = False):
+def add_event(trip_locations_id, event_day, new_event_id=None, event_name=None, full_day = True, unseen_event = False):
     conn = psycopg2.connect(conn_str)   
     cur = conn.cursor()   
     cur.execute("select * from day_trip_table where trip_locations_id='%s'" %(trip_locations_id))  
@@ -36,12 +41,11 @@ def add_event(trip_locations_id, event_day, event_id=None, event_name=None, full
             conn.close()
             return trip_locations_id, detail
     else:
-        event_ids = add_event_cloest_distance(trip_locations_id, event_id)
+        event_ids = db_event_cloest_distance(trip_locations_id, new_event_id)
         event_ids, google_ids, name_list, driving_time_list, walking_time_list = db_google_driving_walking_time(event_ids,event_type = 'add')
         trip_locations_id = '-'.join(event_ids)+'-'+event_day
         cur.execute("select details from day_trip_locations where trip_locations_id='%s'" %(trip_locations_id)) 
-        a = cur.fetchone()
-        if not a:
+        if not cur.fetchone():
             details = []
             db_address(event_ids)
             for item in event_ids:
@@ -96,6 +100,7 @@ def event_type_time_spent(adjusted_normal_time_spent):
         return 'med'
     else:
         return 'small'
+
 def switch_event_list(full_trip_id, trip_locations_id, switch_event_id, switch_event_name=None, event_day=None, full_day = True):
 #     new_trip_locations_id, new_detail = remove_event(trip_locations_id, switch_event_id)
     conn = psycopg2.connect(conn_str)   
