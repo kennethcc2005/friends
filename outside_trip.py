@@ -1,6 +1,10 @@
 #Get events outside the city!!!
-
+from outside_helpers import *
+from helpers import *
 target_direction = 'N'
+current_city = 'San Francisco'
+current_state = 'California'
+def outside_city_poi(current_city, current_state, target_direction = 'N'):: 
 #possible city coords, target city coord_lat, target city coord_long
 coords, coord_lat, coord_long = travel_outside_coords(current_city, current_state)
 #coords: city, lat, long
