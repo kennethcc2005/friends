@@ -198,3 +198,21 @@ def travel_outside_coords(current_city, current_state, direction=None, n_days=1)
     conn.close()
     
     return coords, coord0, coord1
+
+def check_outside_trip_id(outside_trip_id, debug):
+    '''
+    Check outside trip id exist or not.  
+    '''
+    conn = psycopg2.connect(conn_str)  
+    cur = conn.cursor()  
+    cur.execute("select route_ids from outside_trip_table where outside_trip_id = '%s'" %(outside_trip_id)) 
+    a = cur.fetchone()
+    conn.close()
+    if bool(a):
+        if not debug: 
+            return a[0]
+        else:
+            return True
+    else:
+        return False
+
