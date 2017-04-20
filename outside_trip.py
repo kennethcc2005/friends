@@ -20,7 +20,7 @@ def outside_trip_poi_one_day(origin_city, origin_state, target_direction = 'N', 
         if n_days == 1:
             furthest_len = 140
         #possible city coords, target city coord_lat, target city coord_long
-        coords, coord_lat, coord_long = travel_outside_coords(origin_city, origin_state)
+        city_id, coords, coord_lat, coord_long = travel_outside_coords(origin_city, origin_state)
         #coords: city, lat, long
         check_cities_info = []
         for item in coords:
@@ -67,7 +67,7 @@ def outside_trip_poi_one_day(origin_city, origin_state, target_direction = 'N', 
             # need to update!!!!!!!!
             event_ids, event_type = create_event_id_list(big_, med_, small_)
             event_ids, event_type = db_outside_event_cloest_distance(coord_lat, coord_long, event_ids = event_ids, event_type = event_type)
-            event_ids, google_ids, name_list, driving_time_list, walking_time_list =db_outside_google_driving_walking_time(coord_lat,coord_long, event_ids, event_type)
+            event_ids, google_ids, name_list, driving_time_list, walking_time_list =db_outside_google_driving_walking_time(city_id, coord_lat,coord_long, event_ids, event_type, origin_city = origin_city, origin_state = origin_state)
             event_ids, driving_time_list, walking_time_list, total_time_spent = db_outside_remove_extra_events(event_ids, driving_time_list, walking_time_list)
             db_address(event_ids)
             outside_route_id = '-'.join(event_ids) 
