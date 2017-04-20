@@ -306,7 +306,7 @@ def db_outside_google_driving_walking_time(start_coord_lat, start_coord_long, ev
     conn.close()
     return event_ids, google_ids, name_list, driving_time_list, walking_time_list
 
-def db_outside_event_cloest_distance(trip_locations_id=None,event_ids=None, event_type = 'add',new_event_id = None):
+def db_outside_event_cloest_distance(coord_lat, coord_long, trip_locations_id=None,event_ids=None, event_type = 'add',new_event_id = None):
     '''
     Get matrix cloest distance
     '''
@@ -321,6 +321,7 @@ def db_outside_event_cloest_distance(trip_locations_id=None,event_ids=None, even
     for i,v in enumerate(event_ids):
         cur.execute("select index, coord0, coord1 from poi_detail_table where index = %i;"%(float(v)))
         points[i] = cur.fetchone()
+    points = np.vstack((np.array([0, coord_lat, coord_long]),points))
     conn.close()
     n,D = mk_matrix(points[:,1:], geopy_dist)
     if len(points) >= 3:
@@ -329,13 +330,13 @@ def db_outside_event_cloest_distance(trip_locations_id=None,event_ids=None, even
             # create a greedy tour, visiting city 'i' first
             z = length(tour, D)
             z = localsearch(tour, z, D)
-            return np.array(event_ids)[tour], event_type
+            return np.array(event_ids)[tour[1：]], event_type
         #need to figure out other cases
         else:
             tour = nearest_neighbor(n, 0, D)
             # create a greedy tour, visiting city 'i' first
             z = length(tour, D)
             z = localsearch(tour, z, D)
-            return np.array(event_ids)[tour], event_type
+            return np.array(event_ids)[tour[1:]], event_type
     else:
         return np.array(event_ids), event_type
