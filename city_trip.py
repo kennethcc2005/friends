@@ -39,15 +39,15 @@ def get_fulltrip_data_default(state, city, n_days, full_day = True, default = Tr
                 event_ids, google_ids, name_list, driving_time_list, walking_time_list =db_google_driving_walking_time(event_ids, event_type)
                 event_ids, driving_time_list, walking_time_list, total_time_spent = db_remove_extra_events(event_ids, day_trip_id, driving_time_list, walking_time_list)
                 db_address(event_ids)
-                values = db_day_trip(event_ids, county, state, default, full_day,n_days,i)
+                details = db_day_trip_details(event_ids, i)
                 #insert to day_trip ....
                 conn = psycopg2.connect(conn_str)
                 cur = conn.cursor()
-                cur.execute("insert into day_trip_table (trip_locations_id,full_day, default, county, state, details, event_type, event_ids) VALUES ( '%s', %s, %s, '%s', '%s', '%s', '%s', '%s')" %( trip_location_id, full_day, default, county, state, details, event_type, event_ids))
+                cur.execute("insert into day_trip_table (trip_locations_id,full_day, default, county, state, details, event_type, event_ids) VALUES ( '%s', %s, %s, '%s', '%s', '%s', '%s', '%s')" %( day_trip_id, full_day, default, county, state, details, event_type, event_ids))
                 conn.commit()
                 conn.close()
-                trip_location_ids.append(values[0])
-                full_trip_details.extend(values[-1])
+                trip_location_ids.append(day_trip_id)
+                full_trip_details.extend(details)
 
             else:
                 print "error: already have this day, please check the next day"
@@ -61,11 +61,10 @@ def get_fulltrip_data_default(state, city, n_days, full_day = True, default = Tr
                 full_trip_details.extend(day_trip_detail)
 
         full_trip_id = '-'.join([str(state.upper()), str(county.upper().replace(' ','-')),str(int(default)), str(n_days)])
-        details = full_trip_details
         user_id = "admin"
         conn = psycopg2.connect(conn_str)
         cur = conn.cursor()
-        cur.execute("insert into full_trip_table(user_id, full_trip_id,trip_location_ids, default, county, state, details, n_days) VALUES ('%s', '%s', '%s', %s, '%s', '%s', '%s', %s)" %(user_id, full_trip_id, str(trip_location_ids), default, county, state, details, n_days))
+        cur.execute("insert into full_trip_table(user_id, full_trip_id,trip_location_ids, default, county, state, details, n_days) VALUES ('%s', '%s', '%s', %s, '%s', '%s', '%s', %s)" %(user_id, full_trip_id, str(trip_location_ids), default, county, state, full_trip_details, n_days))
         conn.commit()
         conn.close()
         return "finish update %s, %s into database" %(state, county)

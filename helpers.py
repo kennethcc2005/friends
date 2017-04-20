@@ -271,7 +271,7 @@ def db_remove_extra_events(event_ids, driving_time_list,walking_time_list, max_t
     else:
         return event_ids, driving_time_list, walking_time_list, time_spent
 
-def db_day_trip(event_ids, trip_locations_id, county, state, default, full_day,n_days,i):
+def db_day_trip_details(event_ids, i):
     conn=psycopg2.connect(conn_str)
     cur = conn.cursor()
     details = []
@@ -279,9 +279,9 @@ def db_day_trip(event_ids, trip_locations_id, county, state, default, full_day,n
     for event_id in event_ids:
         cur.execute("select index, name, address from poi_detail_table where index = %s;" %(event_id))
         a = cur.fetchone()
-        details.append(str({'id': [0],'name': a[1],'address': a[2], 'day': i}))
+        details.append(str({'id': a[0],'name': a[1],'address': a[2], 'day': i}))
     conn.close()
-    return [trip_locations_id, full_day, default, county, state, details]
+    return details
 
 def check_address(index):
     conn = psycopg2.connect(conn_str)
@@ -293,7 +293,7 @@ def check_address(index):
         return True
     else:
         return False
-        
+
 def db_address(event_ids):
     conn = psycopg2.connect(conn_str)
     cur = conn.cursor()
