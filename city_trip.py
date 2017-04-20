@@ -61,11 +61,10 @@ def get_fulltrip_data_default(state, city, n_days, full_day = True, default = Tr
                 full_trip_details.extend(day_trip_detail)
 
         full_trip_id = '-'.join([str(state.upper()), str(county.upper().replace(' ','-')),str(int(default)), str(n_days)])
-        details = full_trip_details
         user_id = "admin"
         conn = psycopg2.connect(conn_str)
         cur = conn.cursor()
-        cur.execute("insert into full_trip_table(user_id, full_trip_id,trip_location_ids, default, county, state, details, n_days) VALUES ('%s', '%s', '%s', %s, '%s', '%s', '%s', %s)" %(user_id, full_trip_id, str(trip_location_ids), default, county, state, details, n_days))
+        cur.execute("insert into full_trip_table(user_id, full_trip_id,trip_location_ids, default, county, state, details, n_days) VALUES ('%s', '%s', '%s', %s, '%s', '%s', '%s', %s)" %(user_id, full_trip_id, str(trip_location_ids), default, county, state, full_trip_details, n_days))
         conn.commit()
         conn.close()
         return "finish update %s, %s into database" %(state, county)

@@ -216,7 +216,7 @@ def check_outside_trip_id(outside_trip_id, debug):
     else:
         return False
 
-def db_outside_route_trip(outside_route_ids, event_ids, city, state, default, full_day,n_days,i):
+def db_outside_route_trip_details(event_ids, i):
     conn=psycopg2.connect(conn_str)
     cur = conn.cursor()
     details = []
@@ -224,6 +224,6 @@ def db_outside_route_trip(outside_route_ids, event_ids, city, state, default, fu
     for event_id in event_ids:
         cur.execute("select index, name, address from poi_detail_table where index = %s;" %(event_id))
         a = cur.fetchone()
-        details.append(str({'id': [0],'name': a[1],'address': a[2], 'route': i}))
+        details.append(str({'id': a[0],'name': a[1],'address': a[2], 'route': i}))
     conn.close()
     return [outside_route_ids, full_day, default, city, state, details]

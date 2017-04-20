@@ -46,6 +46,7 @@ def outside_trip_poi_one_day(origin_city, origin_state, target_direction = 'N', 
 
         # print n_routes, len(route_labels), city_infos.shape
         # print route_labels
+        outside_route_ids, outside_trip_details =[],[]
         for i in range(n_routes):
             current_events, big_ix, med_ix, small_ix = [], [],[], []
             for ix, label in enumerate(route_labels):
@@ -74,8 +75,22 @@ def outside_trip_poi_one_day(origin_city, origin_state, target_direction = 'N', 
             conn = psycopg2.connect(conn_str)
             cur = conn.cursor()
 
-            cur.execute("insert into outside_route_table (outside_route_id, full_day, default, origin_city, origin_state, direction, details, event_type, event_ids) VALUES ( '%s', %s, %s, '%s', '%s', '%s', '%s', '%s')" %( trip_location_id, full_day, default, county, state, details, event_type, event_ids))
+            cur.execute("insert into outside_route_table (outside_route_id, full_day, default, origin_city, origin_state, target_direction, details, event_type, event_ids) \
+                        VALUES ( '%s', %s, %s, '%s', '%s', '%s', '%s', '%s')" \
+                        %( outside_route_id, full_day, default, origin_city, origin_state, target_direction, details, event_type, event_ids))
             conn.commit()
             conn.close()
-            trip_location_ids.append(values[0])
-            full_trip_details.extend(values[-1])
+            outside_route_ids.append(outside_route_id)
+            outside_trip_details.extend(details)
+
+        user_id = "admin"
+        conn = psycopg2.connect(conn_str)
+        cur = conn.cursor()
+        cur.execute("insert into outside_trip_table(user_id, outside_trip_id, outside_route_ids, origin_city, origin_state, target_direction, n_days, default, full_day, details) \
+                     VALUES ('%s', '%s', '%s', %s, '%s', '%s', '%s', %s)" \
+                     %(user_id, outside_trip_id, str(outside_route_ids), origin_city, origin_state, target_direction, n_days, default, full_day, outside_trip_details))
+        conn.commit()
+        conn.close()
+        return "finish update %s, %s, direction %s into database" %(target_state, target_city, target_direction)
+    else:
+        return "ALERT: %s, %s, direction %s already in database" %(target_state, target_city, target_direction)
