@@ -290,10 +290,10 @@ def db_outside_google_driving_walking_time(city_id, start_coord_lat, start_coord
                    dest_coord1, orig_coords, dest_coords, google_driving_url, google_walking_url,\
                    str(driving_result), str(walking_result), city_to_poi_driving_time,city_to_poi_walking_time))
         conn.commit()
-        name_list.append(orig_name+" to "+ dest_name)
-        google_ids.append(city_to_poi_id)
-        driving_time_list.append(city_to_poi_driving_time)
-        walking_time_list.append(city_to_poi_walking_time)
+        name_list.extend([orig_name+" to "+ dest_name,dest_name+" to "+ orig_name])
+        google_ids.extend([city_to_poi_id]*2)
+        driving_time_list.extend([city_to_poi_driving_time]*2)
+        walking_time_list.extend([city_to_poi_walking_time]*2)
     else:
         cur.execute("select orig_name, dest_name, google_driving_time, google_walking_time from google_city_to_poi_table \
                     where city_to_poi_id = %s " %(city_to_poi_id))
@@ -368,10 +368,6 @@ def db_outside_google_driving_walking_time(city_id, start_coord_lat, start_coord
             driving_time_list.append(google_driving_time)
             walking_time_list.append(google_walking_time)
     conn.close()
-    google_ids.append(city_to_poi_id)
-    name_list.append('back to origin city')
-    driving_time_list.append(city_to_poi_driving_time)
-    walking_time_list.append(city_to_poi_walking_time)
     return event_ids, google_ids, name_list, driving_time_list, walking_time_list
 
 def db_outside_event_cloest_distance(coord_lat, coord_long, trip_locations_id=None,event_ids=None, event_type = 'add',new_event_id = None):
@@ -427,21 +423,13 @@ def db_remove_outside_extra_events(event_ids, driving_time_list,walking_time_lis
     cur.execute("SELECT DISTINCT SUM(adjusted_normal_time_spent) FROM poi_detail_table WHERE index IN %s;" %(tuple(event_ids),))
     total_travel_time = sum(np.minimum(np.array(driving_time_list),np.array(walking_time_list)))
     time_spent = cur.fetchone()[0] + total_travel_time
-    cur.execute("SELECT adjusted_normal_time_spent FROM poi_detail_table WHERE index = %s;" %(event_ids[0]))
-    first_poi_time = cur.fetchone()[0]
     conn.close()
-    if first_poi_time + total_travel_time > max_time_spent:
-        update_driving_time_list = driving_time_list[:2]
-        update_driving_time_list.append(driving_time_list[0])
-        update_walking_time_list = walking_time_list[:2]
-        update_walking_time_list.append(walking_time_list[0])
+    if len(event_ids) == 1:
         return event_ids, update_driving_time_list, update_walking_time_list, 480
     if time_spent > max_time_spent:
         update_event_ids = event_ids[:-1]
         update_driving_time_list = driving_time_list[:-1]
-        update_driving_time_list.append(driving_time_list[0])
         update_walking_time_list = walking_time_list[:-1]
-        update_walking_time_list.append(walking_time_list[0])
         return db_remove_extra_events(update_event_ids, update_driving_time_list, update_walking_time_list)
     else:
         return event_ids, driving_time_list, walking_time_list, time_spent
