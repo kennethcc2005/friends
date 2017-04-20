@@ -425,13 +425,23 @@ def db_remove_outside_extra_events(event_ids, driving_time_list,walking_time_lis
     conn = psycopg2.connect(conn_str)
     cur = conn.cursor()   
     cur.execute("SELECT DISTINCT SUM(adjusted_normal_time_spent) FROM poi_detail_table WHERE index IN %s;" %(tuple(event_ids),))
-    time_spent = cur.fetchone()[0]
+    total_travel_time = sum(np.minimum(np.array(driving_time_list),np.array(walking_time_list)))
+    time_spent = cur.fetchone()[0] + total_travel_time
+    cur.execute("SELECT adjusted_normal_time_spent FROM poi_detail_table WHERE index = %s;" %(event_ids[0]))
+    first_poi_time = cur.fetchone()[0]
     conn.close()
-    time_spent += sum(np.minimum(np.array(driving_time_list),np.array(walking_time_list)))
+    if first_poi_time + total_travel_time > max_time_spent:
+        update_driving_time_list = driving_time_list[:2]
+        update_driving_time_list.append(driving_time_list[0])
+        update_walking_time_list = walking_time_list[:2]
+        update_walking_time_list.append(walking_time_list[0])
+        return event_ids, update_driving_time_list, update_walking_time_list, 480
     if time_spent > max_time_spent:
         update_event_ids = event_ids[:-1]
         update_driving_time_list = driving_time_list[:-1]
+        update_driving_time_list.append(driving_time_list[0])
         update_walking_time_list = walking_time_list[:-1]
+        update_walking_time_list.append(walking_time_list[0])
         return db_remove_extra_events(update_event_ids, update_driving_time_list, update_walking_time_list)
     else:
         return event_ids, driving_time_list, walking_time_list, time_spent
