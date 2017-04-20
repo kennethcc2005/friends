@@ -4,10 +4,15 @@ from outside_helpers import *
 from helpers import *
 from distance import *
 
+
+'''
+Outside trip table: user_id, outside_trip_id, route_ids, origin_city, state, direction, n_days, default, full_day, details 
+outside route table: route_id, event_id_lst, event_type, origin_city, state, direction, details, default, 
+'''
 target_direction = 'N'
 current_city = 'San Francisco'
 current_state = 'California'
-def outside_city_poi_one_day(current_city, current_state, target_direction = 'N', n_days = 1, default = True, debug = True):
+def outside_trip_poi_one_day(current_city, current_state, target_direction = 'N', n_days = 1, default = True, debug = True):
     outside_trip_id = '-'.join([str(state.upper()), str(current_city.upper().replace(' ','-')), target_direction,str(int(default)), str(n_days)])
     if check_outside_trip_id(outside_trip_id, debug):
         if n_days == 1:
