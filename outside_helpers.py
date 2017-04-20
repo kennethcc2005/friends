@@ -227,3 +227,115 @@ def db_outside_route_trip_details(event_ids, i):
         details.append(str({'id': a[0],'name': a[1],'address': a[2], 'route': i}))
     conn.close()
     return [outside_route_ids, full_day, default, city, state, details]
+
+def db_outside_google_driving_walking_time(start_coord_lat, start_coord_long, event_ids, event_type):
+    '''
+    Get estimated travel time from google api.  
+    Limit 1000 calls per day.
+    '''
+    conn = psycopg2.connect(conn_str)  
+    cur = conn.cursor()  
+    google_ids = []
+    driving_time_list = []
+    walking_time_list = []
+    name_list = []
+    for i,v in enumerate(event_ids[:-1]):
+        id_ = str(v) + '0000'+str(event_ids[i+1])
+        result_check_travel_time_id = check_travel_time_id(id_)
+        if not result_check_travel_time_id:
+            cur.execute("select name, coord0, coord1 from poi_detail_table where index = %s"%(v))
+            orig_name, orig_coord0, orig_coord1 = cur.fetchone()
+            orig_idx = v
+            cur.execute("select name, coord0, coord1 from poi_detail_table where index = %s "%(event_ids[i+1]))
+            dest_name, dest_coord0, dest_coord1 = cur.fetchone()
+            dest_idx = event_ids[i+1]
+            orig_coords = str(orig_coord1)+','+str(orig_coord0)
+            dest_coords = str(dest_coord1)+','+str(dest_coord0)
+            google_driving_url = "https://maps.googleapis.com/maps/api/distancematrix/json?origins={0}&destinations={1}&mode=driving&language=en-EN&sensor=false&key={2}".\
+                                    format(orig_coords.replace(' ',''),dest_coords.replace(' ',''),my_key)
+            google_walking_url = "https://maps.googleapis.com/maps/api/distancematrix/json?origins={0}&destinations={1}&mode=walking&language=en-EN&sensor=false&key={2}".\
+                                    format(orig_coords.replace(' ',''),dest_coords.replace(' ',''),my_key)
+            driving_result= simplejson.load(urllib.urlopen(google_driving_url))
+            walking_result= simplejson.load(urllib.urlopen(google_walking_url))
+            if driving_result['rows'][0]['elements'][0]['status'] == 'ZERO_RESULTS':
+                google_driving_url = "https://maps.googleapis.com/maps/api/distancematrix/json?origins={0}&destinations={1}&mode=driving&language=en-EN&sensor=false&key={2}".\
+                                    format(orig_name.replace(' ','+').replace('-','+'),dest_name.replace(' ','+').replace('-','+'),my_key)
+                driving_result= simplejson.load(urllib.urlopen(google_driving_url))
+                
+            if walking_result['rows'][0]['elements'][0]['status'] == 'ZERO_RESULTS':
+                google_walking_url = "https://maps.googleapis.com/maps/api/distancematrix/json?origins={0}&destinations={1}&mode=walking&language=en-EN&sensor=false&key={2}".\
+                                        format(orig_name.replace(' ','+').replace('-','+'),dest_name.replace(' ','+').replace('-','+'),my_key)
+                walking_result= simplejson.load(urllib.urlopen(google_walking_url))
+            if (driving_result['rows'][0]['elements'][0]['status'] == 'NOT_FOUND') and (walking_result['rows'][0]['elements'][0]['status'] == 'NOT_FOUND'):
+                new_event_ids = list(event_ids)
+                new_event_ids.pop(i+1)
+                new_event_ids = db_event_cloest_distance(event_ids=new_event_ids, event_type = event_type)
+                return db_google_driving_walking_time(new_event_ids, event_type)
+            try:
+                google_driving_time = driving_result['rows'][0]['elements'][0]['duration']['value']/60
+            except:            
+                print v, id_, driving_result #need to debug for this
+            try:
+                google_walking_time = walking_result['rows'][0]['elements'][0]['duration']['value']/60
+            except:
+                google_walking_time = 9999
+        
+            cur.execute("select max(index) from  google_travel_time_table")
+            index = cur.fetchone()[0]+1
+            driving_result = str(driving_result).replace("'",'"')
+            walking_result = str(walking_result).replace("'",'"')
+            orig_name = orig_name.replace("'","''")
+            dest_name = dest_name.replace("'","''")
+            cur.execute("INSERT INTO google_travel_time_table VALUES (%i, '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s','%s', '%s', '%s', '%s', '%s', '%s', %s, %s);"%(index, id_, orig_name, orig_idx, dest_name, dest_idx, orig_coord0, orig_coord1, dest_coord0,\
+                                   dest_coord1, orig_coords, dest_coords, google_driving_url, google_walking_url,\
+                                   str(driving_result), str(walking_result), google_driving_time, google_walking_time))
+            conn.commit()
+            name_list.append(orig_name+" to "+ dest_name)
+            google_ids.append(id_)
+            driving_time_list.append(google_driving_time)
+            walking_time_list.append(google_walking_time)
+        else:
+            
+            cur.execute("select orig_name, dest_name, google_driving_time, google_walking_time from google_travel_time_table \
+                         where id_ = '%s'" %(id_))
+            orig_name, dest_name, google_driving_time, google_walking_time = cur.fetchone()
+            name_list.append(orig_name+" to "+ dest_name)
+            google_ids.append(id_)
+            driving_time_list.append(google_driving_time)
+            walking_time_list.append(google_walking_time)
+    conn.close()
+    return event_ids, google_ids, name_list, driving_time_list, walking_time_list
+
+def db_outside_event_cloest_distance(trip_locations_id=None,event_ids=None, event_type = 'add',new_event_id = None):
+    '''
+    Get matrix cloest distance
+    '''
+    if new_event_id or not event_ids:
+        event_ids, event_type = get_event_ids_list(trip_locations_id)
+        if new_event_id:
+            event_ids.append(new_event_id)
+            
+    conn = psycopg2.connect(conn_str)  
+    cur = conn.cursor()
+    points = np.zeros((len(event_ids), 3))
+    for i,v in enumerate(event_ids):
+        cur.execute("select index, coord0, coord1 from poi_detail_table where index = %i;"%(float(v)))
+        points[i] = cur.fetchone()
+    conn.close()
+    n,D = mk_matrix(points[:,1:], geopy_dist)
+    if len(points) >= 3:
+        if event_type == 'add':
+            tour = nearest_neighbor(n, 0, D)
+            # create a greedy tour, visiting city 'i' first
+            z = length(tour, D)
+            z = localsearch(tour, z, D)
+            return np.array(event_ids)[tour], event_type
+        #need to figure out other cases
+        else:
+            tour = nearest_neighbor(n, 0, D)
+            # create a greedy tour, visiting city 'i' first
+            z = length(tour, D)
+            z = localsearch(tour, z, D)
+            return np.array(event_ids)[tour], event_type
+    else:
+        return np.array(event_ids), event_type

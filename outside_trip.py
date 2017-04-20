@@ -66,9 +66,9 @@ def outside_trip_poi_one_day(origin_city, origin_state, target_direction = 'N', 
             print big_, len(big_), len(med_), len(small_)
             # need to update!!!!!!!!
             event_ids, event_type = create_event_id_list(big_, med_, small_)
-            event_ids, event_type = db_event_cloest_distance(event_ids = event_ids, event_type = event_type)
-            event_ids, google_ids, name_list, driving_time_list, walking_time_list =db_google_driving_walking_time(event_ids, event_type)
-            event_ids, driving_time_list, walking_time_list, total_time_spent = db_remove_extra_events(event_ids, driving_time_list, walking_time_list)
+            event_ids, event_type = db_outside_event_cloest_distance(event_ids = event_ids, event_type = event_type)
+            event_ids, google_ids, name_list, driving_time_list, walking_time_list =db_outside_google_driving_walking_time(coord_lat,coord_long, event_ids, event_type)
+            event_ids, driving_time_list, walking_time_list, total_time_spent = db_outside_remove_extra_events(event_ids, driving_time_list, walking_time_list)
             db_address(event_ids)
             outside_route_id = '-'.join(event_ids) 
             values = db_outside_route_trip(outside_route_id, event_ids, origin_city, origin_state, default, full_day,n_days,i)
