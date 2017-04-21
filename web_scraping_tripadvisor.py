@@ -29,6 +29,7 @@ def state_park_web(db_html):
     cnt = 0
     name_lst = []
     full_address_lst = []
+    api_i = 0
     for page in db_html[len(poi_detail_state_park_df):]:
         s = BS(page['html'], "html.parser")
         #index
@@ -77,13 +78,18 @@ def state_park_web(db_html):
         else:
             name_lst.append(name)
             full_address_lst.append(full_address)
-        #coord
+        coord
         try:
-            latitude, longitude, geo_content = find_latlng(full_address, name)
+            # latitude, longitude, geo_content = find_latlng(full_address, name, api_key)
+            result_longlat = find_latlng(full_address, name, api_i)
+            while result_longlat == False:
+                api_i+=1
+                result_longlat = find_latlng(full_address, name, api_i)
         except:
             geo_error =1
             latitude, longitude, geo_content = None, None, None
             
+        [latitude, longitude, geo_content] = result_longlat
         #num_reviews
         try:
             num_reviews = s.find('div', attrs = {'class': 'rs rating'}).find('a').get('content')
@@ -137,32 +143,38 @@ def state_park_web(db_html):
         print cnt, name
         cnt+=1
         if cnt % 100 == 0:
-            poi_detail_state_park_df.to_csv('test_poi_detail_df_%s.csv' %(cnt), index_col = None, encoding=('utf-8'))
-            error_message_df.to_csv('test_poi_error_message_df_%s.csv' %(cnt), index_col = None, encoding=('utf-8'))
+            poi_detail_state_park_df.to_csv('test_poi_detail_no_coords_%s.csv' %(cnt), index_col = None, encoding=('utf-8'))
+            error_message_df.to_csv('test_poi_error_message_no_coords_%s.csv' %(cnt), index_col = None, encoding=('utf-8'))
         # time.sleep(1)
     poi_detail_state_park_df.to_csv('test_poi_detail_df.csv',encoding=('utf-8'))
     error_message_df.to_csv('test_poi_error_message_df.csv',encoding=('utf-8'))
     return poi_detail_state_park_df, error_message_df
 
-def find_latlng(full_address, name):
+def find_latlng(full_address, name, i):
     api_key1 = 'AIzaSyCrgwS_L75NfO9qzIKG8L0ox7zGw81BpRU' #geocoder.google API only
     api_key2 = 'AIzaSyBwh4WqOIVJGJuKkmzpQxlkjahgx6qzimk'
-
-    g_address = geocoder.google(full_address, key = api_key1)
+    api_key3 = ''
+    api_key4 = ''
+    api_key = [api_key1,api_key2,api_key3,api_key4]
+    g_address = geocoder.google(full_address, key = api_key[i])
+    if g_address.content['status'] == 'OVER_QUERY_LIMIT':
+        return False
     if g_address.ok:
         latitude= g_address.lat
         longitude = g_address.lng
-        return latitude, longitude, g_address.content
+        return [latitude, longitude, g_address.content]
     
-    g_name = geocoder.google(name, key = api_key2)
+    g_name = geocoder.google(name, key = api_key[i])
+    if g_name.content['status'] == 'OVER_QUERY_LIMIT':
+        return False
     if g_name.ok:
         latitude= g_name.lat
         longitude = g_name.lng
-        return latitude, longitude, g_name.content
+        return [latitude, longitude, g_name.content]
     else:
         latitude = None
         longitude = None
-        return latitude, longitude, None
+        return [latitude, longitude, None]
 
     #error_message
     #state_abb_error : state_abb can not change to state name/ either state_abb is already state name or state_abb is not in United States
