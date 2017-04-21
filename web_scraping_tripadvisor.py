@@ -78,18 +78,17 @@ def state_park_web(db_html):
         else:
             name_lst.append(name)
             full_address_lst.append(full_address)
-        coord
-        try:
-            # latitude, longitude, geo_content = find_latlng(full_address, name, api_key)
-            result_longlat = find_latlng(full_address, name, api_i)
-            while result_longlat == False:
-                api_i+=1
-                result_longlat = find_latlng(full_address, name, api_i)
-        except:
-            geo_error =1
-            latitude, longitude, geo_content = None, None, None
+        # try:
+        #     # latitude, longitude, geo_content = find_latlng(full_address, name, api_key)
+        #     result_longlat = find_latlng(full_address, name, api_i)
+        #     while result_longlat == False:
+        #         api_i+=1
+        #         result_longlat = find_latlng(full_address, name, api_i)
+        # except:
+        #     geo_error =1
+        #     latitude, longitude, geo_content = None, None, None
             
-        [latitude, longitude, geo_content] = result_longlat
+        # [latitude, longitude, geo_content] = result_longlat
         #num_reviews
         try:
             num_reviews = s.find('div', attrs = {'class': 'rs rating'}).find('a').get('content')
@@ -141,13 +140,14 @@ def state_park_web(db_html):
         poi_detail_state_park_df.loc[len(poi_detail_state_park_df)] = input_list
         
         print cnt, name
-        cnt+=1
-        if cnt % 100 == 0:
-            poi_detail_state_park_df.to_csv('test_poi_detail_no_coords_%s.csv' %(cnt), index_col = None, encoding=('utf-8'))
-            error_message_df.to_csv('test_poi_error_message_no_coords_%s.csv' %(cnt), index_col = None, encoding=('utf-8'))
+        if cnt % 1000 == 0:
+            poi_detail_state_park_df.to_csv('poi_detail_no_coords_%s.csv' %(cnt), index_col = None, encoding=('utf-8'))
+            error_message_df.to_csv('poi_error_message_no_coords_%s.csv' %(cnt), index_col = None, encoding=('utf-8'))
         # time.sleep(1)
-    poi_detail_state_park_df.to_csv('test_poi_detail_df.csv',encoding=('utf-8'))
-    error_message_df.to_csv('test_poi_error_message_df.csv',encoding=('utf-8'))
+        cnt+=1
+
+    poi_detail_state_park_df.to_csv('poi_detail_df.csv',encoding=('utf-8'))
+    error_message_df.to_csv('poi_error_message_df.csv',encoding=('utf-8'))
     return poi_detail_state_park_df, error_message_df
 
 def find_latlng(full_address, name, i):
