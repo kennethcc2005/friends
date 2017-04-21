@@ -20,6 +20,10 @@ db.TripAdvisor
 
 abb2state_dict = abb.abb2state
 
+with open('api_key_list.config') as api_key_list_file:
+    api_key_list = json.load(api_key_list_file)
+api_key = api_key_list['api_key_list']
+
 def state_park_web(db_html):    
 
     poi_detail_state_park_df=pd.DataFrame(columns=['index','name','street_address','city','state_abb','state','postal_code','country','address','coord_lat','coord_long','num_reviews','review_score','ranking','tag','raw_visit_length','fee','description','url',"geo_content"])
@@ -151,11 +155,14 @@ def state_park_web(db_html):
     return poi_detail_state_park_df, error_message_df
 
 def find_latlng(full_address, name, i):
-    api_key1 = 'AIzaSyCrgwS_L75NfO9qzIKG8L0ox7zGw81BpRU' #geocoder.google API only
-    api_key2 = 'AIzaSyBwh4WqOIVJGJuKkmzpQxlkjahgx6qzimk'
-    api_key3 = ''
-    api_key4 = ''
-    api_key = [api_key1,api_key2,api_key3,api_key4]
+    
+    # api_key1 = 'AIzaSyCrgwS_L75NfO9qzIKG8L0ox7zGw81BpRU' #geocoder.google API only
+    # api_key2 = 'AIzaSyBwh4WqOIVJGJuKkmzpQxlkjahgx6qzimk'
+    # api_key3 = 'AIzaSyA25LW2CRcD9mSmiAWBYSPOSoiKP_m2plQ'
+    # api_key4 = ''
+
+
+    
     g_address = geocoder.google(full_address, key = api_key[i])
     if g_address.content['status'] == 'OVER_QUERY_LIMIT':
         return False
