@@ -12,22 +12,27 @@ import us_state_abbrevation as abb
 from bs4 import BeautifulSoup as BS
 
 
+
 ## import progressbar 
 
-state_abb_dict = abb.state2abb
+abb2state_dict = abb.abb2state
 
 def state_park_web(db_html):    
+
     poi_detail_state_park_df=pd.DataFrame(columns=['index','name','street_address','city','state_abb','state','postal_code','country','address','coord_lat','coord_long','num_reviews','review_score','ranking','tag','visit_length','fee','description','url',"geo_content"])
-    error_message_df = pd.DataFrame(columns=['index','name','url','state_abb_error','address_error','geo_error','review_error','score_error','ranking_error','tag_error']) 
+    error_message_df = pd.DataFrame(columns=['index','name','url','state_abb_error', 'state_error','address_error','geo_error','review_error','score_error','ranking_error','tag_error']) 
+
+
 
     for page in db_html[len(poi_detail_state_park_df):]:
         s = BS(page['html'], "html.parser")
         #index
         #name
-        error_message = []
-        state_abb_error, address_error, geo_error, review_error, score_error, ranking_error, tag_error = 0,0,0,0,0,0,0
-        input_list = []
-    #     print name
+        
+        input_list, error_message = [],[]
+        state_abb_error, state_error, address_error, geo_error, review_error, score_error, ranking_error, tag_error = 0,0,0,0,0,0,0,0
+        latitude, longitude, geo_content = None, None, None
+        #     print name
 
         url = page['url']
         name = s.find('h1', attrs = {'class':'heading_name'}).text.strip()
@@ -41,11 +46,13 @@ def state_park_web(db_html):
         state_abb = s.find('span', attrs = {'property':'addressRegion'}).text.strip()
         if state_abb:
             try:
-                state = state_abb_dict.keys()[state_abb_dict.values().index(state_abb)]
+                # state = state_abb_dict.keys()[state_abb_dict.values().index(state_abb)]
+                state = abb2state_dict[state_abb]
             except:
                 state_abb_error = 1
                 state = state_abb
         else:
+            state_error =1
             state_abb = None
             state = None
         #postal_code
@@ -58,8 +65,8 @@ def state_park_web(db_html):
         else:
             country = 'United States'
         #address
-        if state_abb:
-            full_address = street_address+', '+city+', '+state_abb+', '+postal_code[:5]+', '+country
+        if state:
+            full_address = street_address+', '+city+', '+state+', '+postal_code[:5]+', '+country
         else:
             address_error =1
             full_address = street_address+', '+city+', '+postal_code[:5]+', '+country
@@ -70,7 +77,7 @@ def state_park_web(db_html):
         except:
             geo_error =1
             latitude, longitude, geo_content = None, None, None
-            break
+            
         #num_reviews
         try:
             num_reviews = s.find('div', attrs = {'class': 'rs rating'}).find('a').get('content')
@@ -114,19 +121,40 @@ def state_park_web(db_html):
             description = s.find('div', attrs = {'class': "listing_details"}).text.strip()
         else:
             description = None
+        error_message = [len(poi_detail_state_park_df), name, url,state_abb_error, state_error, address_error, geo_error, review_error, score_error, ranking_error, tag_error]
+        error_message_df.loc[len(poi_detail_state_park_df)] =error_message
+
 
         input_list = [len(poi_detail_state_park_df), name, street_address, city, state_abb, state, postal_code, country, full_address, latitude, longitude, num_reviews, review_score, ranking, tags, visit_length, fee, description, url, geo_content]
         poi_detail_state_park_df.loc[len(poi_detail_state_park_df)] = input_list
         
-        error_message = [len(poi_detail_state_park_df), name, url,state_abb_error, address_error, geo_error, review_error, score_error, ranking_error, tag_error]
-        error_message_df.loc[len(poi_detail_state_park_df)] =error_message
-        time.sleep(1)
-    return poi_detail_state_park, error_message_df 
 
+        # time.sleep(1)
+    return poi_detail_state_park_df, error_message_df
 
+def find_latlng(full_address, name):
+    api_key1 = 'AIzaSyCrgwS_L75NfO9qzIKG8L0ox7zGw81BpRU' #geocoder.google API only
+    api_key2 = 'AIzaSyBwh4WqOIVJGJuKkmzpQxlkjahgx6qzimk'
+
+    g_address = geocoder.google(full_address, key = api_key1)
+    if g_address.ok:
+        latitude= g_address.lat
+        longitude = g_address.lng
+        return latitude, longitude, g_address.content
+    
+    g_name = geocoder.google(name, key = api_key2)
+    if g_name.ok:
+        latitude= g_name.lat
+        longitude = g_name.lng
+        return latitude, longitude, g_name.content
+    else:
+        latitude = None
+        longitude = None
+        return latitude, longitude, None
 
     #error_message
     #state_abb_error : state_abb can not change to state name/ either state_abb is already state name or state_abb is not in United States
+    #state_error : no state can be found
     #address_error : address that do not have state(not USA) or address is not complete
     #geo_error : geocoder api error, mainly due to over limit
     #review_error and score_error  ranking_error : can not get review/ score. either no one review or new style of website. 
@@ -150,6 +178,5 @@ def state_park_web(db_html):
     # poi_detail_state_park.to_sql('poi_detail_state_park_table',engine, if_exists = "replace")
 
 
-
-
-
+# def __init__ (self):
+#     self.state_park_web = state_park_web()

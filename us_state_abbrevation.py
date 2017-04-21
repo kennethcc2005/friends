@@ -51,7 +51,7 @@ state2abb = {
     'Wyoming': 'WY',
 }
 
-abb2states = {
+abb2state = {
         'AK': 'Alaska',
         'AL': 'Alabama',
         'AR': 'Arkansas',
@@ -111,38 +111,44 @@ abb2states = {
         'WY': 'Wyoming'
 }
 
-#Canada 
-prov_terr = {
-    'AB': 'Alberta',
-    'BC': 'British Columbia',
-    'MB': 'Manitoba',
-    'NB': 'New Brunswick',
-    'NL': 'Newfoundland and Labrador',
-    'NT': 'Northwest Territories',
-    'NS': 'Nova Scotia',
-    'NU': 'Nunavut',
-    'ON': 'Ontario',
-    'PE': 'Prince Edward Island',
-    'QC': 'Quebec',
-    'SK': 'Saskatchewan',
-    'YT': 'Yukon'
-}
+# #Canada 
+# prov_terr = {
+#     'AB': 'Alberta',
+#     'BC': 'British Columbia',
+#     'MB': 'Manitoba',
+#     'NB': 'New Brunswick',
+#     'NL': 'Newfoundland and Labrador',
+#     'NT': 'Northwest Territories',
+#     'NS': 'Nova Scotia',
+#     'NU': 'Nunavut',
+#     'ON': 'Ontario',
+#     'PE': 'Prince Edward Island',
+#     'QC': 'Quebec',
+#     'SK': 'Saskatchewan',
+#     'YT': 'Yukon'
+# }
 
-provinces = {
-    'AB': 'Alberta',
-    'BC': 'British Columbia',
-    'MB': 'Manitoba',
-    'NB': 'New Brunswick',
-    'NL': 'Newfoundland and Labrador',
-    'NS': 'Nova Scotia',
-    'ON': 'Ontario',
-    'PE': 'Prince Edward Island',
-    'QC': 'Quebec',
-    'SK': 'Saskatchewan'
-}
+# provinces = {
+#     'AB': 'Alberta',
+#     'BC': 'British Columbia',
+#     'MB': 'Manitoba',
+#     'NB': 'New Brunswick',
+#     'NL': 'Newfoundland and Labrador',
+#     'NS': 'Nova Scotia',
+#     'ON': 'Ontario',
+#     'PE': 'Prince Edward Island',
+#     'QC': 'Quebec',
+#     'SK': 'Saskatchewan'
+# }
 
-territories = {
-    'NT': 'Northwest Territories',
-    'NU': 'Nunavut',
-    'YT': 'Yukon'
-}
+# territories = {
+#     'NT': 'Northwest Territories',
+#     'NU': 'Nunavut',
+#     'YT': 'Yukon'
+# }
+# 
+# 
+def __init__ (self,state2abb,abb2state):
+    self.state2abb = state2abb
+    self.abb2state = abb2state
+    
