@@ -25,6 +25,7 @@ def state_park_web(db_html):
     poi_detail_state_park_df=pd.DataFrame(columns=['index','name','street_address','city','state_abb','state','postal_code','country','address','coord_lat','coord_long','num_reviews','review_score','ranking','tag','raw_visit_length','fee','description','url',"geo_content"])
     error_message_df = pd.DataFrame(columns=['index','name','url','state_abb_error', 'state_error','address_error','geo_error','review_error','score_error','ranking_error','tag_error']) 
     search_visit_length = re.compile('Recommended length of visit:')
+    search_fee = re.compile('Fee:')
     cnt = 0
     name_lst = []
     full_address_lst = []
@@ -117,10 +118,10 @@ def state_park_web(db_html):
         else:
             raw_visit_length = None
         #fee
-        if s.find(text= "Fee:"):
-            fee = s.find(text= "Fee:").parent.next_sibling.upper()
+        if s.find('b', text= search_fee):
+            fee = s.find('b',text= search_fee).next_sibling.strip()
         else:
-            fee = 'NO'
+            fee = 'Unknown'
         #description
         if s.find('div', attrs = {'class': "listing_details"}):
             description = s.find('div', attrs = {'class': "listing_details"}).text.strip()
