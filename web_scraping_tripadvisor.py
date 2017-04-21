@@ -10,8 +10,11 @@ import bs4
 import geocoder
 import us_state_abbrevation as abb
 from bs4 import BeautifulSoup as BS
-
-
+from pymongo import MongoClient
+import re
+client = MongoClient()
+db = client.zoeshrm
+db.TripAdvisor
 
 ## import progressbar 
 
@@ -19,21 +22,20 @@ abb2state_dict = abb.abb2state
 
 def state_park_web(db_html):    
 
-    poi_detail_state_park_df=pd.DataFrame(columns=['index','name','street_address','city','state_abb','state','postal_code','country','address','coord_lat','coord_long','num_reviews','review_score','ranking','tag','visit_length','fee','description','url',"geo_content"])
+    poi_detail_state_park_df=pd.DataFrame(columns=['index','name','street_address','city','state_abb','state','postal_code','country','address','coord_lat','coord_long','num_reviews','review_score','ranking','tag','raw_visit_length','fee','description','url',"geo_content"])
     error_message_df = pd.DataFrame(columns=['index','name','url','state_abb_error', 'state_error','address_error','geo_error','review_error','score_error','ranking_error','tag_error']) 
-
-
-
+    search_visit_length = re.compile('Recommended length of visit:')
+    cnt = 0
+    name_lst = []
+    full_address_lst = []
     for page in db_html[len(poi_detail_state_park_df):]:
         s = BS(page['html'], "html.parser")
         #index
         #name
-        
         input_list, error_message = [],[]
         state_abb_error, state_error, address_error, geo_error, review_error, score_error, ranking_error, tag_error = 0,0,0,0,0,0,0,0
         latitude, longitude, geo_content = None, None, None
         #     print name
-
         url = page['url']
         name = s.find('h1', attrs = {'class':'heading_name'}).text.strip()
 
@@ -41,7 +43,6 @@ def state_park_web(db_html):
         street_address = s.find('span', attrs = {'class':'street-address'}).text.strip()
         #city
         city = s.find('span', attrs = {'property':'addressLocality'}).text.strip()
-
         #state
         state_abb = s.find('span', attrs = {'property':'addressRegion'}).text.strip()
         if state_abb:
@@ -70,7 +71,11 @@ def state_park_web(db_html):
         else:
             address_error =1
             full_address = street_address+', '+city+', '+postal_code[:5]+', '+country
-
+        if (name in name_lst) and (full_address in full_address_lst):
+            continue
+        else:
+            name_lst.append(name)
+            full_address_lst.append(full_address)
         #coord
         try:
             latitude, longitude, geo_content = find_latlng(full_address, name)
@@ -107,10 +112,10 @@ def state_park_web(db_html):
             tags = None
             tag_error =1
         #visit_length
-        if s.find(text ="Recommended length of visit:"):
-            visit_length = s.find(text ="Recommended length of visit:").parent.next_sibling
+        if s.find('b', text =search_visit_length):
+            raw_visit_length = s.find('b', text =search_visit_length).next_sibling.strip()
         else:
-            visit_length = None
+            raw_visit_length = None
         #fee
         if s.find(text= "Fee:"):
             fee = s.find(text= "Fee:").parent.next_sibling.upper()
@@ -125,11 +130,17 @@ def state_park_web(db_html):
         error_message_df.loc[len(poi_detail_state_park_df)] =error_message
 
 
-        input_list = [len(poi_detail_state_park_df), name, street_address, city, state_abb, state, postal_code, country, full_address, latitude, longitude, num_reviews, review_score, ranking, tags, visit_length, fee, description, url, geo_content]
+        input_list = [len(poi_detail_state_park_df), name, street_address, city, state_abb, state, postal_code, country, full_address, latitude, longitude, num_reviews, review_score, ranking, tags, raw_visit_length, fee, description, url, geo_content]
         poi_detail_state_park_df.loc[len(poi_detail_state_park_df)] = input_list
         
-
+        print cnt, name
+        cnt+=1
+        if cnt % 100 == 0:
+            poi_detail_state_park_df.to_csv('test_poi_detail_df_%s.csv' %(cnt), index_col = None, encoding=('utf-8'))
+            error_message_df.to_csv('test_poi_error_message_df_%s.csv' %(cnt), index_col = None, encoding=('utf-8'))
         # time.sleep(1)
+    poi_detail_state_park_df.to_csv('test_poi_detail_df.csv',encoding=('utf-8'))
+    error_message_df.to_csv('test_poi_error_message_df.csv',encoding=('utf-8'))
     return poi_detail_state_park_df, error_message_df
 
 def find_latlng(full_address, name):
@@ -180,3 +191,6 @@ def find_latlng(full_address, name):
 
 # def __init__ (self):
 #     self.state_park_web = state_park_web()
+if __name__ == '__main__':
+    poi_pages = db.TripAdvisor.find()
+    state_park_web(poi_pages)
