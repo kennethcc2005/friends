@@ -19,13 +19,10 @@ db.TripAdvisor
 ## import progressbar 
 
 abb2state_dict = abb.abb2state
-
 with open('api_key_list.config') as api_key_list_file:
     api_key_list = json.load(api_key_list_file)
 api_key = api_key_list['api_key_list']
-
 def state_park_web(db_html):    
-
     poi_detail_state_park_df=pd.DataFrame(columns=['index','name','street_address','city','state_abb','state','postal_code','country','address','coord_lat','coord_long','num_reviews','review_score','ranking','tag','raw_visit_length','fee','description','url',"geo_content"])
     error_message_df = pd.DataFrame(columns=['index','name','url','state_abb_error', 'state_error','address_error','geo_error','review_error','score_error','ranking_error','tag_error']) 
     search_visit_length = re.compile('Recommended length of visit:')
@@ -159,10 +156,7 @@ def find_latlng(full_address, name, i):
     # api_key1 = 'AIzaSyCrgwS_L75NfO9qzIKG8L0ox7zGw81BpRU' #geocoder.google API only
     # api_key2 = 'AIzaSyBwh4WqOIVJGJuKkmzpQxlkjahgx6qzimk'
     # api_key3 = 'AIzaSyA25LW2CRcD9mSmiAWBYSPOSoiKP_m2plQ'
-    # api_key4 = ''
-
-
-    
+    # api_key4 = ''    
     g_address = geocoder.google(full_address, key = api_key[i])
     if g_address.content['status'] == 'OVER_QUERY_LIMIT':
         return False
@@ -190,11 +184,7 @@ def find_latlng(full_address, name, i):
     #geo_error : geocoder api error, mainly due to over limit
     #review_error and score_error  ranking_error : can not get review/ score. either no one review or new style of website. 
     #tag_error : can not get tags. maybe different style of website or no tags on that location. (plz report error)
-    #
-
-
     # save into cvs
-    #
     # error_message_df.to_csv('error_message.csv', encoding=('utf-8'))
     # poi_detail_state_park.to_csv("poi_detail_state_park.csv", encoding=('utf-8'))
     # 
@@ -208,9 +198,6 @@ def find_latlng(full_address, name, i):
     # db.geo_content.insert_many(poi_additional_detail.to_dict('records'))
     # poi_detail_state_park.to_sql('poi_detail_state_park_table',engine, if_exists = "replace")
 
-
-# def __init__ (self):
-#     self.state_park_web = state_park_web()
 if __name__ == '__main__':
     poi_pages = db.TripAdvisor.find()
     state_park_web(poi_pages)
