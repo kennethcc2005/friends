@@ -23,13 +23,13 @@ with open('api_key_list.config') as api_key_list_file:
     api_key_list = json.load(api_key_list_file)
 api_key = api_key_list['api_key_list']
 def poi_detail_web():    
-    poi_detail_df = pd.read_csv('poi_detail_coords_2000.csv', index_col = 0)
+    poi_detail_df = pd.read_csv('poi_detail_coords_13000.csv', index_col = 0)
     poi_detail_df.geo_content = poi_detail_df.geo_content.astype(str)
     print 'round2'
     cnt = 0
     i = 0
     for index in poi_detail_df.index:
-        if index >= 2000:
+        if index >= 14000:
             full_address = poi_detail_df.loc[index].address
             name = poi_detail_df.loc[index]['name']
             try:
@@ -52,10 +52,10 @@ def poi_detail_web():
             if cnt % 10 == 0:
                 print index, name
             if cnt % 1000 == 0:
-                poi_detail_df.to_csv('poi_detail_coords_%s.csv' %(cnt), index_col = None, encoding=('utf-8'))
+                poi_detail_df.to_csv('poi_detail_coords_apr_24_%s.csv' %(cnt), index_col = None, encoding=('utf-8'))
             cnt+=1
 
-    poi_detail_df.to_csv('poi_detail_df_coords.csv',encoding=('utf-8'))
+    poi_detail_df.to_csv('poi_detail_df_coords_apr_24.csv',encoding=('utf-8'))
     return poi_detail_df
 
 def find_latlng(full_address, name, key):
