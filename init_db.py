@@ -43,7 +43,11 @@ def init_db_tables():
     df_counties_u.to_sql('county_table',engine, if_exists = "replace")
     cities_coords = pd.read_csv(df_city_coords_path)
     cities_coords = cities_coords[['city', 'state','nation','coord0','coord1']].drop_duplicates()
-    cities_coords.to_sql('all_cities_coords',engine, if_exists = "replace")
-
+    cities_coords.to_sql('all_cities_coords',engine, index=False, if_exists = "replace")
+    conn = psycopg2.connect(conn_str)
+    cur = conn.cursor()
+    cur.execute('ALTER TABLE `all_cities_coords` ADD PRIMARY KEY (`id_field`);')
+    conn.commit()
+    conn.close()
 if __name__ == '__main__':
     init_db_tables()
