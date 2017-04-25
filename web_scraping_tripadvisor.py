@@ -177,6 +177,57 @@ def find_latlng(full_address, name, i):
         longitude = None
         return [latitude, longitude, None]
 
+
+def request_s(url):
+    headers = {'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_10_1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/39.0.2171.95 Safari/537.36'}
+    r=requests.get(url,headers=headers)
+    s = BS(r.text, 'html.parser')
+    return s
+def thing_to_do_in_national_park(s):
+    thing_to_do = pd.DataFrame(columns=["national_park_name","activate_name","url","num_reviews","score","ranking","tags"])
+    national_park_name = s.find('h1', {"id": "HEADING"}).text.strip('\n').replace("Things to Do in ","")
+    print "park name: ",national_park_name
+    for activate in s.findAll('div', {"class":"listing_title"}):
+        activate_name = activate.text.strip()
+        url ="https://www.tripadvisor.com"+ activate.find('a').get("href")
+        if activate.find_next('div', {"class":"rs rating"}) ==None:
+            score, num_reviews = 0, 0
+        else:
+            score = activate.find_next('div', {"class":"rs rating"}).find('span').get('alt').replace(" of 5 bubbles","")
+            num_reviews = activate.find_next('div', {"class":"rs rating"}).find('span', {'class': "more"}).text.strip().replace("reviews","")
+        ranking = activate.find_next('div', {'class':"popRanking wrap"}).text.strip().replace("#","")[0]
+        if activate.find_next('div',{'class':"tag_line"}).find('span') == None:
+            tags = None
+        else:
+            tags = activate.find_next('div',{'class':"tag_line"}).find('span').text
+        list_thing = [national_park_name, activate_name, url, num_reviews, score, ranking, tags]
+        thing_to_do.loc[len(thing_to_do)] = list_thing
+    return thing_to_do
+
+
+def wiki_table(s):
+    #s is webpage in html
+    name, state =None, None
+    table =  s.find('table', {"class" : "wikitable"})
+    # col_name =  [x.text for x in table.findAll("th",{"scope":"col"})]
+    # num_col = len(col_name)
+
+    # wiki_table= pd.DataFrame(columns=col_name)
+    df = pd.DataFrame(columns = ["name","state","desciption"])
+    for row in table.findAll("tr")[1:]:
+        if row.find('th', {'scope':"row"}) != None:
+            name = row.find('th', {'scope':"row"}).next_element.get('title')
+        cells = row.findAll("td")
+        #For each "tr", assign each "td" to a variable.
+        if len(cells) == 6:
+            state = cells[1].find(text=True)
+            
+            des = str("".join(cells[5].findAll(text=True)).encode('utf8'))
+            desciption = re.sub(r"\[\d+\]","",des)
+
+    df.loc[len(df)] = [name, state, desciption]
+    return df
+
     #error_message
     #state_abb_error : state_abb can not change to state name/ either state_abb is already state name or state_abb is not in United States
     #state_error : no state can be found
