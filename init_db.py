@@ -12,16 +12,16 @@ def init_db_tables():
 
     day_trip_locations_table = pd.DataFrame(columns =['trip_locations_id','full_day', 'default', 'county', 'state','details','event_type','event_ids'])
 
-    google_travel_time_table = pd.DataFrame(columns =['id_','orig_name','orig_idx','dest_name','dest_idx','orig_coord0','orig_coord1',\
-                                           'dest_coord0','dest_coord1','orig_coords','dest_coords','google_driving_url',\
+    google_travel_time_table = pd.DataFrame(columns =['id_','orig_name','orig_idx','dest_name','dest_idx','orig_coord_lat','orig_coord_long',\
+                                           'dest_coord_lat','dest_coord_long','orig_coords','dest_coords','google_driving_url',\
                                            'google_walking_url','driving_result','walking_result','google_driving_time',\
                                            'google_walking_time'])
     day_trip_locations_table.loc[0] = ['CALIFORNIA-SAN-DIEGO-1-3-0', True, True, 'SAN DIEGO', 'California',
        ["{'address': '15500 San Pasqual Valley Rd, Escondido, CA 92027, USA', 'id': 2259, 'day': 0, 'name': u'San Diego Zoo Safari Park'}", "{'address': 'Safari Walk, Escondido, CA 92027, USA', 'id': 2260, 'day': 0, 'name': u'Meerkat'}", "{'address': '1999 Citracado Parkway, Escondido, CA 92029, USA', 'id': 3486, 'day': 0, 'name': u'Stone'}", "{'address': '1999 Citracado Parkway, Escondido, CA 92029, USA', 'id': 3487, 'day': 0, 'name': u'Stone Brewery'}", "{'address': 'Mount Woodson Trail, Poway, CA 92064, USA', 'id': 4951, 'day': 0, 'name': u'Lake Poway'}", "{'address': '17130 Mt Woodson Rd, Ramona, CA 92065, USA', 'id': 4953, 'day': 0, 'name': u'Potato Chip Rock'}", "{'address': '17130 Mt Woodson Rd, Ramona, CA 92065, USA', 'id': 4952, 'day': 0, 'name': u'Mt. Woodson'}"],
        'big','[2259, 2260,3486,3487,4951,4953,4952]']
     google_travel_time_table.loc[0] = ['439300002871', u'Moonlight Beach', 4393.0,
-       u'Carlsbad Flower Fields', 2871.0, -117.29692141333341,
-       33.047769600024424, -117.3177652511278, 33.124079753475236,
+       u'Carlsbad Flower Fields', 2871.0, 33.047769600024424, -117.29692141333341,
+       33.124079753475236, -117.3177652511278, 
        '33.0477696,-117.296921413', '33.1240797535,-117.317765251',
        'https://maps.googleapis.com/maps/api/distancematrix/json?origins=33.0477696,-117.296921413&destinations=33.1240797535,-117.317765251&mode=driving&language=en-EN&sensor=false&key=AIzaSyDJh9EWCA_v0_B3SvjzjUA3OSVYufPJeGE',
        'https://maps.googleapis.com/maps/api/distancematrix/json?origins=33.0477696,-117.296921413&destinations=33.1240797535,-117.317765251&mode=walking&language=en-EN&sensor=false&key=AIzaSyDJh9EWCA_v0_B3SvjzjUA3OSVYufPJeGE',
@@ -44,6 +44,7 @@ def init_db_tables():
     df_counties_u.to_sql('county_table',engine, if_exists = "replace")
     cities_coords = pd.read_csv(df_city_coords_path)
     cities_coords = cities_coords[['city', 'state','nation','coord0','coord1']].drop_duplicates()
+    cities_coords.columns = [['city', 'state','nation','coord_lat','coord_long']]
     cities_coords.to_sql('all_cities_coords_table',engine, index=True, if_exists = "replace")
     conn = psycopg2.connect(conn_str)
     cur = conn.cursor()

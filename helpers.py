@@ -12,6 +12,7 @@ def find_county(state, city):
     '''
     conn = psycopg2.connect(conn_str)
     cur = conn.cursor()
+    city = city.replace('_',' ')
     cur.execute("select county from county_table where city = '%s' and state = '%s';" %(city.title(), state.title()))
 
     county = cur.fetchone()
@@ -28,9 +29,9 @@ def db_start_location(county, state, city):
     conn = psycopg2.connect(conn_str)
     cur = conn.cursor()
     if county:
-        cur.execute("select index, coord0, coord1, adjusted_normal_time_spent, poi_rank, rating from poi_detail_table where county = '%s' and state = '%s'; "%(county.upper(), state.title()))
+        cur.execute("select index, coord_lat, coord_long, adjusted_normal_time_spent, poi_rank, rating from poi_detail_table_v2     where county = '%s' and state = '%s'; "%(county.upper(), state.title()))
     else:
-        cur.execute("select index, coord0, coord1, adjusted_normal_time_spent, poi_rank, rating from poi_detail_table where city = '%s' and state = '%s'; "%(city.title(), state.title()))
+        cur.execute("select index, coord_lat, coord_long, adjusted_normal_time_spent, poi_rank, rating from poi_detail_table_v2     where city = '%s' and state = '%s'; "%(city.title(), state.title()))
     a = cur.fetchall()
     conn.close()
     return np.array(a)
@@ -62,7 +63,7 @@ def db_event_cloest_distance(trip_locations_id=None,event_ids=None, event_type =
     cur = conn.cursor()
     points = np.zeros((len(event_ids), 3))
     for i,v in enumerate(event_ids):
-        cur.execute("select index, coord0, coord1 from poi_detail_table where index = %i;"%(float(v)))
+        cur.execute("select index, coord_lat, coord_long from poi_detail_table_v2   where index = %i;"%(float(v)))
         points[i] = cur.fetchone()
     conn.close()
     n,D = mk_matrix(points[:,1:], geopy_dist)
@@ -193,14 +194,14 @@ def db_google_driving_walking_time(event_ids, event_type):
         id_ = str(v) + '0000'+str(event_ids[i+1])
         result_check_travel_time_id = check_travel_time_id(id_)
         if not result_check_travel_time_id:
-            cur.execute("select name, coord0, coord1 from poi_detail_table where index = %s"%(v))
-            orig_name, orig_coord0, orig_coord1 = cur.fetchone()
+            cur.execute("select name, coord_lat, coord_long from poi_detail_table_v2    where index = %s"%(v))
+            orig_name, orig_coord_lat, orig_coord_long = cur.fetchone()
             orig_idx = v
-            cur.execute("select name, coord0, coord1 from poi_detail_table where index = %s "%(event_ids[i+1]))
-            dest_name, dest_coord0, dest_coord1 = cur.fetchone()
+            cur.execute("select name, coord_lat, coord_long from poi_detail_table_v2    where index = %s "%(event_ids[i+1]))
+            dest_name, dest_coord_lat, dest_coord_long = cur.fetchone()
             dest_idx = event_ids[i+1]
-            orig_coords = str(orig_coord1)+','+str(orig_coord0)
-            dest_coords = str(dest_coord1)+','+str(dest_coord0)
+            orig_coords = str(orig_coord_lat)+','+str(orig_coord_long)
+            dest_coords = str(dest_coord_lat)+','+str(dest_coord_long)
             google_driving_url = "https://maps.googleapis.com/maps/api/distancematrix/json?origins={0}&destinations={1}&mode=driving&language=en-EN&sensor=false&key={2}".\
                                     format(orig_coords.replace(' ',''),dest_coords.replace(' ',''),my_key)
             google_walking_url = "https://maps.googleapis.com/maps/api/distancematrix/json?origins={0}&destinations={1}&mode=walking&language=en-EN&sensor=false&key={2}".\
@@ -236,8 +237,8 @@ def db_google_driving_walking_time(event_ids, event_type):
             walking_result = str(walking_result).replace("'",'"')
             orig_name = orig_name.replace("'","''")
             dest_name = dest_name.replace("'","''")
-            cur.execute("INSERT INTO google_travel_time_table VALUES (%i, '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s','%s', '%s', '%s', '%s', '%s', '%s', %s, %s);"%(index, id_, orig_name, orig_idx, dest_name, dest_idx, orig_coord0, orig_coord1, dest_coord0,\
-                                   dest_coord1, orig_coords, dest_coords, google_driving_url, google_walking_url,\
+            cur.execute("INSERT INTO google_travel_time_table VALUES (%i, '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s','%s', '%s', '%s', '%s', '%s', '%s', %s, %s);"%(index, id_, orig_name, orig_idx, dest_name, dest_idx, orig_coord_lat, orig_coord_long, dest_coord_lat,\
+                                   dest_coord_long, orig_coords, dest_coords, google_driving_url, google_walking_url,\
                                    str(driving_result), str(walking_result), google_driving_time, google_walking_time))
             conn.commit()
             name_list.append(orig_name+" to "+ dest_name)
@@ -259,7 +260,7 @@ def db_google_driving_walking_time(event_ids, event_type):
 def db_remove_extra_events(event_ids, driving_time_list,walking_time_list, max_time_spent=480):
     conn = psycopg2.connect(conn_str)
     cur = conn.cursor()   
-    cur.execute("SELECT DISTINCT SUM(adjusted_normal_time_spent) FROM poi_detail_table WHERE index IN %s;" %(tuple(event_ids),))
+    cur.execute("SELECT DISTINCT SUM(adjusted_normal_time_spent) FROM poi_detail_table_v2    WHERE index IN %s;" %(tuple(event_ids),))
     time_spent = cur.fetchone()[0]
     conn.close()
     time_spent += sum(np.minimum(np.array(driving_time_list),np.array(walking_time_list)))
@@ -277,7 +278,7 @@ def db_day_trip_details(event_ids, i):
     details = []
     #details dict includes: id, name,address, day
     for event_id in event_ids:
-        cur.execute("select index, name, address from poi_detail_table where index = %s;" %(event_id))
+        cur.execute("select index, name, address from poi_detail_table_v2    where index = %s;" %(event_id))
         a = cur.fetchone()
         details.append(str({'id': a[0],'name': a[1],'address': a[2], 'day': i}))
     conn.close()
@@ -286,7 +287,7 @@ def db_day_trip_details(event_ids, i):
 def check_address(index):
     conn = psycopg2.connect(conn_str)
     cur = conn.cursor()
-    cur.execute("select address from poi_detail_table where index = %s;"%(index))
+    cur.execute("select address from poi_detail_table_v2     where index = %s;"%(index))
     a = cur.fetchone()[0]
     conn.close()
     if a:
@@ -302,14 +303,14 @@ def db_address(event_ids):
             cur.execute("select driving_result from google_travel_time_table where orig_idx = %s;" %(i))
             a= cur.fetchone()[0]
             add = ast.literal_eval(a)['origin_addresses'][0]
-            cur.execute("update poi_detail_table set address = '%s' where index = %s;" %(add, i))
+            cur.execute("update poi_detail_table_v2  set address = '%s' where index = %s;" %(add, i))
             conn.commit()
     last = event_ids[-1]
     if not check_address(last):
         cur.execute("select driving_result from google_travel_time_table where dest_idx = %s;" %(last))
         a= cur.fetchone()[0]
         add = ast.literal_eval(a)['destination_addresses'][0]
-        cur.execute("update poi_detail_table set address = '%s' where index = %s;" %(add, last))
+        cur.execute("update poi_detail_table_v2  set address = '%s' where index = %s;" %(add, last))
         conn.commit()
     conn.close()
 
