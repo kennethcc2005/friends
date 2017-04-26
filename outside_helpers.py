@@ -11,7 +11,7 @@ def ajax_available_events(county, state):
     state = state.title()
     conn = psycopg2.connect(conn_str)   
     cur = conn.cursor()   
-    cur.execute("select index, name from poi_detail_table where county='%s' and state='%s'" %(county,state))  
+    cur.execute("select index, name from poi_detail_table_v2 where county='%s' and state='%s'" %(county,state))  
     poi_lst = [item for item in cur.fetchall()]
     conn.close()
     return poi_lst
@@ -51,7 +51,7 @@ def add_event(trip_locations_id, event_day, new_event_id=None, event_name=None, 
             details = []
             db_address(event_ids)
             for item in event_ids:
-                cur.execute("select index, name, address from poi_detail_table where index = '%s';" %(item))
+                cur.execute("select index, name, address from poi_detail_table_v2 where index = '%s';" %(item))
                 a = cur.fetchone()
                 detail = {'id': a[0],'name': a[1],'address': a[2], 'day': event_day}
                 details.append(detail)
@@ -122,7 +122,7 @@ def switch_event_list(full_trip_id, trip_locations_id, switch_event_id, switch_e
             event_ids = [switch_event_id, index]
             event_ids, google_ids, name_list, driving_time_list, walking_time_list = db_google_driving_walking_time(event_ids, event_type='switch')
             if min(driving_time_list[0], walking_time_list[0]) <= 60:
-                cur.execute("select poi_rank, rating, adjusted_normal_time_spent from poi_detail_table where index=%s" %(index))
+                cur.execute("select poi_rank, rating, adjusted_normal_time_spent from poi_detail_table_v2 where index=%s" %(index))
                 target_poi_rank, target_rating, target_adjusted_normal_time_spent = cur.fetchone()
                 target_event_type = event_type_time_spent(target_adjusted_normal_time_spent)
                 switch_lst.append([target_poi_rank, target_rating, target_event_type==event_type])
@@ -224,7 +224,7 @@ def db_outside_route_trip_details(event_ids, i):
     details = []
     #details dict includes: id, name,address, day
     for event_id in event_ids:
-        cur.execute("select index, name, address from poi_detail_table where index = %s;" %(event_id))
+        cur.execute("select index, name, address from poi_detail_table_v2 where index = %s;" %(event_id))
         a = cur.fetchone()
         details.append(str({'id': a[0],'name': a[1],'address': a[2], 'route': i}))
     conn.close()
@@ -420,7 +420,7 @@ def check_city_to_poi(city_to_poi_id):
 def db_remove_outside_extra_events(event_ids, driving_time_list,walking_time_list, max_time_spent=480):
     conn = psycopg2.connect(conn_str)
     cur = conn.cursor()   
-    cur.execute("SELECT DISTINCT SUM(adjusted_normal_time_spent) FROM poi_detail_table WHERE index IN %s;" %(tuple(event_ids),))
+    cur.execute("SELECT DISTINCT SUM(adjusted_normal_time_spent) FROM poi_detail_table_v2 WHERE index IN %s;" %(tuple(event_ids),))
     total_travel_time = sum(np.minimum(np.array(driving_time_list),np.array(walking_time_list)))
     time_spent = cur.fetchone()[0] + total_travel_time
     conn.close()
