@@ -6,7 +6,7 @@ conn_str = "dbname='travel_with_friends' user='zoesh' host='localhost'"
 engine = create_engine('postgresql://zoesh@localhost:5432/travel_with_friends')
 df_counties_path = '/Users/zoesh/Desktop/travel_with_friends/travel_with_friends/us_cities_states_counties.csv'
 df_city_coords_path = '/Users/zoesh/Desktop/travel_with_friends/travel_with_friends/all_cities_coords.csv'
-poi_detail_path = '/Users/zoesh/Desktop/travel_with_friends/travel_with_friends/poi_detail_v2.csv'
+poi_detail_path = '/Users/zoesh/Desktop/travel_with_friends/travel_with_friends/new_poi_df.csv'
 def init_db_tables():
     full_trip_table = pd.DataFrame(columns =['username', 'full_trip_id', 'trip_location_ids', 'default', 'county', 'state', 'details', 'n_days'])
 
@@ -36,8 +36,8 @@ def init_db_tables():
     full_trip_table.to_sql('full_trip_table',engine, if_exists = "replace")
     day_trip_locations_table.to_sql('day_trip_table',engine, if_exists = "replace")
     google_travel_time_table.to_sql('google_travel_time_table',engine, if_exists = "replace")
-    poi_detail = pd.read_csv(poi_detail_path)
-    poi_detail.to_sql('poi_detail_table_v2',engine, if_exists = "replace")
+    poi_detail = pd.read_csv(poi_detail_path,index_col=0)
+    poi_detail.to_sql('poi_detail_table_v2',engine, index=True, if_exists = "replace")
     df_counties = pd.read_csv(df_counties_path,sep='|')
     df_counties_u = df_counties.drop('City alias',axis = 1).drop_duplicates()
     df_counties_u.columns = ["city","state_abb","state","county"]
