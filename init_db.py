@@ -8,9 +8,9 @@ df_counties_path = '/Users/zoesh/Desktop/travel_with_friends/travel_with_friends
 df_city_coords_path = '/Users/zoesh/Desktop/travel_with_friends/travel_with_friends/all_cities_coords.csv'
 poi_detail_path = '/Users/zoesh/Desktop/travel_with_friends/travel_with_friends/new_poi_df_v2.csv'
 def init_db_tables():
-    full_trip_table = pd.DataFrame(columns =['username', 'full_trip_id', 'trip_location_ids', 'default', 'county', 'state', 'details', 'n_days'])
+    full_trip_table = pd.DataFrame(columns =['username', 'full_trip_id', 'trip_location_ids', 'regular', 'county', 'state', 'details', 'n_days'])
 
-    day_trip_locations_table = pd.DataFrame(columns =['trip_locations_id','full_day', 'default', 'county', 'state','details','event_type','event_ids'])
+    day_trip_locations_table = pd.DataFrame(columns =['trip_locations_id','full_day', 'regular', 'county', 'state','details','event_type','event_ids'])
 
     google_travel_time_table = pd.DataFrame(columns =['id_','orig_name','orig_idx','dest_name','dest_idx','orig_coord_lat','orig_coord_long',\
                                            'dest_coord_lat','dest_coord_long','orig_coords','dest_coords','google_driving_url',\

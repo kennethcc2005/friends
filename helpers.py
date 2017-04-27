@@ -13,7 +13,7 @@ def find_county(state, city):
     conn = psycopg2.connect(conn_str)
     cur = conn.cursor()
     city = city.replace('_',' ')
-    cur.execute("select county from county_table where city = '%s' and state = '%s';" %(city.title(), state.title()))
+    cur.execute("select distinct county from poi_detail_table_v2 where city = '%s' and state = '%s';" %(city.title(), state.title()))
 
     county = cur.fetchone()
     conn.close()
@@ -29,9 +29,9 @@ def db_start_location(county, state, city):
     conn = psycopg2.connect(conn_str)
     cur = conn.cursor()
     if county:
-        cur.execute("select index, coord_lat, coord_long, adjusted_normal_time_spent, poi_rank, rating from poi_detail_table_v2     where county = '%s' and state = '%s'; "%(county.upper(), state.title()))
+        cur.execute("select index, coord_lat, coord_long, adjusted_visit_length, ranking, review_score, num_reviews from poi_detail_table_v2     where county = '%s' and state = '%s'; "%(county.upper(), state.title()))
     else:
-        cur.execute("select index, coord_lat, coord_long, adjusted_normal_time_spent, poi_rank, rating from poi_detail_table_v2     where city = '%s' and state = '%s'; "%(city.title(), state.title()))
+        cur.execute("select index, coord_lat, coord_long, adjusted_visit_length, ranking, review_score, num_reviews from poi_detail_table_v2     where city = '%s' and state = '%s'; "%(city.title(), state.title()))
     a = cur.fetchall()
     conn.close()
     return np.array(a)
@@ -135,13 +135,13 @@ def check_travel_time_id(new_id):
 #May need to improve by adding #reviews in this. :)
 def sorted_events(info,ix):
     '''
-    find the event_id, ranking and rating columns
-    sorted base on ranking then rating
+    find the event_id, ranking and review_score, num_reviews columns
+    sorted base on ranking then review_score, num_reviews
     
     return sorted list 
     '''
-    event_ = info[ix][:,[0,4,5]]
-    return np.array(sorted(event_, key=lambda x: (x[1], -x[2])))
+    event_ = info[ix][:,[0,4,5,6]]
+    return np.array(sorted(event_, key=lambda x: (x[1], -x[3], -x[2])))
 
 #Need to make this more efficient
 def create_event_id_list(big_,medium_,small_):
@@ -194,10 +194,10 @@ def db_google_driving_walking_time(event_ids, event_type):
         id_ = str(v) + '0000'+str(event_ids[i+1])
         result_check_travel_time_id = check_travel_time_id(id_)
         if not result_check_travel_time_id:
-            cur.execute("select name, coord_lat, coord_long from poi_detail_table_v2    where index = %s"%(v))
+            cur.execute("select name, coord_lat, coord_long from poi_detail_table_v2 where index = %s"%(v))
             orig_name, orig_coord_lat, orig_coord_long = cur.fetchone()
             orig_idx = v
-            cur.execute("select name, coord_lat, coord_long from poi_detail_table_v2    where index = %s "%(event_ids[i+1]))
+            cur.execute("select name, coord_lat, coord_long from poi_detail_table_v2 where index = %s "%(event_ids[i+1]))
             dest_name, dest_coord_lat, dest_coord_long = cur.fetchone()
             dest_idx = event_ids[i+1]
             orig_coords = str(orig_coord_lat)+','+str(orig_coord_long)
@@ -230,7 +230,7 @@ def db_google_driving_walking_time(event_ids, event_type):
                 google_walking_time = walking_result['rows'][0]['elements'][0]['duration']['value']/60
             except:
                 google_walking_time = 9999
-        
+            # print 'google_driving time': google_driving_time
             cur.execute("select max(index) from  google_travel_time_table")
             index = cur.fetchone()[0]+1
             driving_result = str(driving_result).replace("'",'"')
@@ -260,10 +260,11 @@ def db_google_driving_walking_time(event_ids, event_type):
 def db_remove_extra_events(event_ids, driving_time_list,walking_time_list, max_time_spent=480):
     conn = psycopg2.connect(conn_str)
     cur = conn.cursor()   
-    cur.execute("SELECT DISTINCT SUM(adjusted_normal_time_spent) FROM poi_detail_table_v2    WHERE index IN %s;" %(tuple(event_ids),))
+    cur.execute("SELECT DISTINCT SUM(adjusted_visit_length) FROM poi_detail_table_v2 WHERE index IN %s;" %(tuple(event_ids),))
     time_spent = cur.fetchone()[0]
     conn.close()
-    time_spent += sum(np.minimum(np.array(driving_time_list),np.array(walking_time_list)))
+    travel_time = int(sum(np.minimum(np.array(driving_time_list),np.array(walking_time_list))))
+    time_spent = int(time_spent) + travel_time
     if time_spent > max_time_spent:
         update_event_ids = event_ids[:-1]
         update_driving_time_list = driving_time_list[:-1]
@@ -282,6 +283,7 @@ def db_day_trip_details(event_ids, i):
         a = cur.fetchone()
         details.append(str({'id': a[0],'name': a[1],'address': a[2], 'day': i}))
     conn.close()
+    
     return details
 
 def check_address(index):
