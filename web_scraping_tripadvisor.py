@@ -23,7 +23,7 @@ with open('api_key_list.config') as api_key_list_file:
     api_key_list = json.load(api_key_list_file)
 api_key = api_key_list['api_key_list']
 def state_park_web(db_html):    
-    poi_detail_state_park_df=pd.DataFrame(columns=['index','name','street_address','city','state_abb','state','postal_code','country','address','coord_lat','coord_long','num_reviews','review_score','ranking','tag','raw_visit_length','fee','description','url',"geo_content"])
+    poi_detail_state_park_df=pd.DataFrame(columns=['index','name','street_address','city','state_abb','state','postal_code','country','address','coord_lat','coord_long','num_reviews','review_score','ranking','tag','raw_visit_length','fee','description','url',"geo_content", "adjueste_visit_length"])
     error_message_df = pd.DataFrame(columns=['index','name','url','state_abb_error', 'state_error','address_error','geo_error','review_error','score_error','ranking_error','tag_error']) 
     search_visit_length = re.compile('Recommended length of visit:')
     search_fee = re.compile('Fee:')
@@ -39,8 +39,7 @@ def state_park_web(db_html):
         state_abb_error, state_error, address_error, geo_error, review_error, score_error, ranking_error, tag_error = 0,0,0,0,0,0,0,0
         latitude, longitude, geo_content = None, None, None
         #     print name
-        # url = page['url']
-        url = None
+        url = page['url']
         name = s.find('h1', attrs = {'class':'heading_name'}).text.strip()
 
         #street_address
@@ -80,8 +79,11 @@ def state_park_web(db_html):
         else:
             name_lst.append(name)
             full_address_lst.append(full_address)
+
+        #geo 
+        
         try:
-            latitude, longitude, geo_content = find_latlng(full_address, name, api_key)
+            # latitude, longitude, geo_content = find_latlng(full_address, name, api_key)
             result_longlat = find_latlng(full_address, name, api_i)
             while result_longlat == False:
                 api_i+=1
@@ -125,8 +127,10 @@ def state_park_web(db_html):
         #visit_length
         if s.find('b', text =search_visit_length):
             raw_visit_length = s.find('b', text =search_visit_length).next_sibling.strip()
+            adjusted_time = raw_to_adjust_time(raw_visit_length)
         else:
             raw_visit_length = None
+            adjusted_time = None
         #fee
         if s.find('b', text= search_fee):
             fee = s.find('b',text= search_fee).next_sibling.strip()
@@ -137,11 +141,12 @@ def state_park_web(db_html):
             description = s.find('div', attrs = {'class': "listing_details"}).text.strip()
         else:
             description = None
+        adjusted_time = raw_to_adjust_time(raw_visit_length)
+
         error_message = [len(poi_detail_state_park_df), name, url,state_abb_error, state_error, address_error, geo_error, review_error, score_error, ranking_error, tag_error]
         error_message_df.loc[len(poi_detail_state_park_df)] =error_message
 
-
-        input_list = [len(poi_detail_state_park_df), name, street_address, city, state_abb, state, postal_code, country, full_address, latitude, longitude, num_reviews, review_score, ranking, tags, raw_visit_length, fee, description, url, geo_content]
+        input_list = [len(poi_detail_state_park_df), name, street_address, city, state_abb, state, postal_code, country, full_address, latitude, longitude, num_reviews, review_score, ranking, tags, raw_visit_length, fee, description, url, geo_content, adjusted_time]
         poi_detail_state_park_df.loc[len(poi_detail_state_park_df)] = input_list
         
     #     print cnt, name
@@ -151,8 +156,8 @@ def state_park_web(db_html):
     #     # time.sleep(1)
     #     cnt+=1
 
-    # poi_detail_state_park_df.to_csv('poi_detail_df.csv',encoding=('utf-8'))
-    # error_message_df.to_csv('poi_error_message_df.csv',encoding=('utf-8'))
+    # poi_detail_state_park_df.to_csv('poi_detail_state_park_df3.csv',encoding=('utf-8'))
+    # error_message_df.to_csv('poi_error_message__state_park_df3.csv',encoding=('utf-8'))
     return poi_detail_state_park_df, error_message_df
 
 def find_latlng(full_address, name, i):
@@ -223,6 +228,7 @@ def wiki_table(s):
             name = row.find('th', {'scope':"row"}).next_element.get('title')
         cells = row.findAll("td")
         #For each "tr", assign each "td" to a variable.
+        #have 6 columns, we only need 1,5 (state, description)
         if len(cells) == 6:
             state = cells[1].find(text=True)
 
@@ -232,6 +238,17 @@ def wiki_table(s):
     df.loc[len(df)] = [name, state, description]
     return df
 
+def raw_to_adjust_time(raw):
+    adjusted_time =0
+    if raw == "1-2 hours":
+        adjusted_time = 120
+    if raw == "2-3 hours":
+        adjusted_time = 180
+    if raw == "More than 3 hours":
+        adjusted_time = 360
+    if raw == "<1 hour":
+        adjusted_time = 60
+    return adjusted_time
     #error_message
     #state_abb_error : state_abb can not change to state name/ either state_abb is already state name or state_abb is not in United States
     #state_error : no state can be found
