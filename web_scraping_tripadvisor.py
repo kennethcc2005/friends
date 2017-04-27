@@ -39,7 +39,8 @@ def state_park_web(db_html):
         state_abb_error, state_error, address_error, geo_error, review_error, score_error, ranking_error, tag_error = 0,0,0,0,0,0,0,0
         latitude, longitude, geo_content = None, None, None
         #     print name
-        url = page['url']
+        # url = page['url']
+        url = None
         name = s.find('h1', attrs = {'class':'heading_name'}).text.strip()
 
         #street_address
@@ -79,33 +80,36 @@ def state_park_web(db_html):
         else:
             name_lst.append(name)
             full_address_lst.append(full_address)
-        # try:
-        #     # latitude, longitude, geo_content = find_latlng(full_address, name, api_key)
-        #     result_longlat = find_latlng(full_address, name, api_i)
-        #     while result_longlat == False:
-        #         api_i+=1
-        #         result_longlat = find_latlng(full_address, name, api_i)
-        # except:
-        #     geo_error =1
-        #     latitude, longitude, geo_content = None, None, None
+        try:
+            latitude, longitude, geo_content = find_latlng(full_address, name, api_key)
+            result_longlat = find_latlng(full_address, name, api_i)
+            while result_longlat == False:
+                api_i+=1
+                result_longlat = find_latlng(full_address, name, api_i)
+        except:
+            geo_error =1
+            latitude, longitude, geo_content = None, None, None
             
-        # [latitude, longitude, geo_content] = result_longlat
+        [latitude, longitude, geo_content] = result_longlat
         #num_reviews
         try:
             num_reviews = s.find('div', attrs = {'class': 'rs rating'}).find('a').get('content')
-            if num_reviews == None:
-                num_reviews = s.find('a', {'property': "reviewCount"}).get('content')    
+
         except:
-            num_reviews = 0
-            review_error=1    
+            try:
+                num_reviews = s.find('a', {'property': "reviewCount"}).get('content')
+            except:
+                num_reviews = 0
+                review_error=1 
         #review_score
         try:
             review_score = s.find('div', attrs = {'class': 'heading_rating separator'}).find('img').get('content')
-            if review_score == None:
-                review_score = s.find('a', {'property': "ratingValue"}).get('content')
         except:
-            review_score = 0 
-            score_error =1
+            try:
+                review_score = s.find('span', {'property': "ratingValue"}).get('content')
+            except:
+                review_score = 0 
+                score_error =1
         #ranking
         try:
             ranking = s.find('b', attrs = {'class':'rank_text wrap'}).text.strip().replace('#',"")
@@ -140,15 +144,15 @@ def state_park_web(db_html):
         input_list = [len(poi_detail_state_park_df), name, street_address, city, state_abb, state, postal_code, country, full_address, latitude, longitude, num_reviews, review_score, ranking, tags, raw_visit_length, fee, description, url, geo_content]
         poi_detail_state_park_df.loc[len(poi_detail_state_park_df)] = input_list
         
-        print cnt, name
-        if cnt % 1000 == 0:
-            poi_detail_state_park_df.to_csv('poi_detail_no_coords_%s.csv' %(cnt), index_col = None, encoding=('utf-8'))
-            error_message_df.to_csv('poi_error_message_no_coords_%s.csv' %(cnt), index_col = None, encoding=('utf-8'))
-        # time.sleep(1)
-        cnt+=1
+    #     print cnt, name
+    #     if cnt % 1000 == 0:
+    #         poi_detail_state_park_df.to_csv('poi_detail_no_coords_%s.csv' %(cnt), index_col = None, encoding=('utf-8'))
+    #         error_message_df.to_csv('poi_error_message_no_coords_%s.csv' %(cnt), index_col = None, encoding=('utf-8'))
+    #     # time.sleep(1)
+    #     cnt+=1
 
-    poi_detail_state_park_df.to_csv('poi_detail_df.csv',encoding=('utf-8'))
-    error_message_df.to_csv('poi_error_message_df.csv',encoding=('utf-8'))
+    # poi_detail_state_park_df.to_csv('poi_detail_df.csv',encoding=('utf-8'))
+    # error_message_df.to_csv('poi_error_message_df.csv',encoding=('utf-8'))
     return poi_detail_state_park_df, error_message_df
 
 def find_latlng(full_address, name, i):
@@ -213,7 +217,7 @@ def wiki_table(s):
     # num_col = len(col_name)
 
     # wiki_table= pd.DataFrame(columns=col_name)
-    df = pd.DataFrame(columns = ["name","state","desciption"])
+    df = pd.DataFrame(columns = ["name","state","description"])
     for row in table.findAll("tr")[1:]:
         if row.find('th', {'scope':"row"}) != None:
             name = row.find('th', {'scope':"row"}).next_element.get('title')
@@ -221,11 +225,11 @@ def wiki_table(s):
         #For each "tr", assign each "td" to a variable.
         if len(cells) == 6:
             state = cells[1].find(text=True)
-            
-            des = str("".join(cells[5].findAll(text=True)).encode('utf8'))
-            desciption = re.sub(r"\[\d+\]","",des)
 
-    df.loc[len(df)] = [name, state, desciption]
+            des = str("".join(cells[5].findAll(text=True)).encode('utf8'))
+            description = re.sub(r"\[\d+\]","",des)
+
+    df.loc[len(df)] = [name, state, description]
     return df
 
     #error_message
