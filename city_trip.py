@@ -35,7 +35,7 @@ def get_fulltrip_data(state, city, n_days, full_day = True, regular = True, debu
                 small_ = sorted_events(county_list_info, small_ix)
                 
                 event_ids, event_type = create_event_id_list(big_, med_, small_)
-                event_ids, event_type = db_event_cloest_distance(event_ids = event_ids, event_type = event_type)
+                event_ids, event_type = db_event_cloest_distance(event_ids = event_ids, event_type = event_type, city_name = city)
                 event_ids, google_ids, name_list, driving_time_list, walking_time_list =db_google_driving_walking_time(event_ids, event_type)
                 # print 'event_ids, google_ids, name_list', event_ids, google_ids, name_list
                 # print 'driving and walking time list: ', driving_time_list, walking_time_list

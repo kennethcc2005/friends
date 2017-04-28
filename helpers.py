@@ -50,7 +50,7 @@ def get_event_ids_list(trip_locations_id):
     return event_ids,event_type
 
 
-def db_event_cloest_distance(trip_locations_id=None,event_ids=None, event_type = 'add',new_event_id = None):
+def db_event_cloest_distance(trip_locations_id=None,event_ids=None, event_type = 'add',new_event_id = None, city_name =None):
     '''
     Get matrix cloest distance
     '''
@@ -61,12 +61,16 @@ def db_event_cloest_distance(trip_locations_id=None,event_ids=None, event_type =
             
     conn = psycopg2.connect(conn_str)  
     cur = conn.cursor()
-    points = np.zeros((len(event_ids), 3))
+    points=[]
+    # points = np.zeros((len(event_ids), 3))
     for i,v in enumerate(event_ids):
-        cur.execute("select index, coord_lat, coord_long from poi_detail_table_v2   where index = %i;"%(float(v)))
+        cur.execute("select index, coord_lat, coord_long, city , raking from poi_detail_table_v2   where index = %i;"%(float(v)))
         points[i] = cur.fetchone()
     conn.close()
-    n,D = mk_matrix(points[:,1:], geopy_dist)
+
+    points = check_NO_1(points, city_name)
+
+    n,D = mk_matrix(points[:,1:3], geopy_dist)
     if len(points) >= 3:
         if event_type == 'add':
             tour = nearest_neighbor(n, 0, D)
@@ -83,6 +87,14 @@ def db_event_cloest_distance(trip_locations_id=None,event_ids=None, event_type =
             return np.array(event_ids)[tour], event_type
     else:
         return np.array(event_ids), event_type
+
+def check_NO_1(poi_list, city_name):
+    for i, poi in enumerate(poi_list):
+        if poi[3] == city_name and poi[4]==1:
+            number_one =poi_list.pop(i)
+            return np.vstack((np.array(number_one),np.array(poi_list)))
+    return np.array(poi_list)
+
 
 def check_full_trip_id(full_trip_id, debug):
     '''

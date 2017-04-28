@@ -22,6 +22,8 @@ abb2state_dict = abb.abb2state
 with open('api_key_list.config') as api_key_list_file:
     api_key_list = json.load(api_key_list_file)
 api_key = api_key_list['api_key_list']
+
+
 def state_park_web(db_html):    
     poi_detail_state_park_df=pd.DataFrame(columns=['index','name','street_address','city','state_abb','state','postal_code','country','address','coord_lat','coord_long','num_reviews','review_score','ranking','tag','raw_visit_length','fee','description','url',"geo_content", "adjueste_visit_length"])
     error_message_df = pd.DataFrame(columns=['index','name','url','state_abb_error', 'state_error','address_error','geo_error','review_error','score_error','ranking_error','tag_error']) 
@@ -82,17 +84,17 @@ def state_park_web(db_html):
 
         #geo 
         
-        try:
-            # latitude, longitude, geo_content = find_latlng(full_address, name, api_key)
-            result_longlat = find_latlng(full_address, name, api_i)
-            while result_longlat == False:
-                api_i+=1
-                result_longlat = find_latlng(full_address, name, api_i)
-        except:
-            geo_error =1
-            latitude, longitude, geo_content = None, None, None
+        # try:
+        #     # latitude, longitude, geo_content = find_latlng(full_address, name, api_key)
+        #     result_longlat = find_latlng(full_address, name, api_i)
+        #     while result_longlat == False:
+        #         api_i+=1
+        #         result_longlat = find_latlng(full_address, name, api_i)
+        # except:
+        #     geo_error =1
+        #     latitude, longitude, geo_content = None, None, None
             
-        [latitude, longitude, geo_content] = result_longlat
+        # [latitude, longitude, geo_content] = result_longlat
         #num_reviews
         try:
             num_reviews = s.find('div', attrs = {'class': 'rs rating'}).find('a').get('content')
