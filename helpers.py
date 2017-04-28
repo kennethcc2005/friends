@@ -64,12 +64,12 @@ def db_event_cloest_distance(trip_locations_id=None,event_ids=None, event_type =
     points=[]
     # points = np.zeros((len(event_ids), 3))
     for i,v in enumerate(event_ids):
-        cur.execute("select index, coord_lat, coord_long, city , raking from poi_detail_table_v2   where index = %i;"%(float(v)))
-        points[i] = cur.fetchone()
+        cur.execute("select index, coord_lat, coord_long, city , ranking from poi_detail_table_v2   where index = %i;"%(float(v)))
+        points.append(cur.fetchone())
     conn.close()
 
     points = check_NO_1(points, city_name)
-
+    print 'db_distance',points
     n,D = mk_matrix(points[:,1:3], geopy_dist)
     if len(points) >= 3:
         if event_type == 'add':
@@ -89,8 +89,9 @@ def db_event_cloest_distance(trip_locations_id=None,event_ids=None, event_type =
         return np.array(event_ids), event_type
 
 def check_NO_1(poi_list, city_name):
+    city_name = city_name.replace('_',' ')
     for i, poi in enumerate(poi_list):
-        if poi[3] == city_name and poi[4]==1:
+        if (poi[3] == city_name) and (poi[4]==1):
             number_one =poi_list.pop(i)
             return np.vstack((np.array(number_one),np.array(poi_list)))
     return np.array(poi_list)
@@ -269,7 +270,7 @@ def db_google_driving_walking_time(event_ids, event_type):
     conn.close()
     return event_ids, google_ids, name_list, driving_time_list, walking_time_list
 
-def db_remove_extra_events(event_ids, driving_time_list,walking_time_list, max_time_spent=480):
+def db_remove_extra_events(event_ids, driving_time_list,walking_time_list, max_time_spent=600):
     conn = psycopg2.connect(conn_str)
     cur = conn.cursor()   
     cur.execute("SELECT DISTINCT SUM(adjusted_visit_length) FROM poi_detail_table_v2 WHERE index IN %s;" %(tuple(event_ids),))

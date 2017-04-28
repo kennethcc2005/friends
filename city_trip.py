@@ -14,6 +14,7 @@ def get_fulltrip_data(state, city, n_days, full_day = True, regular = True, debu
         poi_coords = county_list_info[:,1:3]
         kmeans = KMeans(n_clusters=n_days).fit(poi_coords)
         day_labels = kmeans.labels_
+        print 'day labels',day_labels
         for i in range(n_days):
             day_trip_id = '-'.join([str(state), str(county.upper().replace(' ','-')),str(int(regular)), str(n_days),str(i)])
             if not check_day_trip_id(day_trip_id, debug):
@@ -48,8 +49,6 @@ def get_fulltrip_data(state, city, n_days, full_day = True, regular = True, debu
                 cur.execute('select max(index) from day_trip_table;')
                 max_index = cur.fetchone()[0]
                 index = max_index+1
-                print 'strversion',str(details).replace("'", "''")
-                print "insert into day_trip_table (index, trip_locations_id, full_day, regular, county, state, details, event_type, event_ids) VALUES ( %s, '%s', %s, %s, '%s', '%s', '%s', '%s', '%s');" %( index, day_trip_id, full_day, regular, county, state, str(details).replace("'", "''"), event_type, event_ids)
                 cur.execute("insert into day_trip_table (index, trip_locations_id, full_day, regular, county, state, details, event_type, event_ids) VALUES ( %s, '%s', %s, %s, '%s', '%s', '%s', '%s', '%s');" %( index, day_trip_id, full_day, regular, county, state, str(details).replace("'", "''"), event_type, event_ids))
                 conn.commit()
                 conn.close()
