@@ -6,7 +6,10 @@ def get_fulltrip_data(state, city, n_days, full_day = True, regular = True, debu
     '''
     county = find_county(state, city)
     n_days = int(n_days)
-    full_trip_id = '-'.join([str(state.upper()), str(county.upper().replace(' ','-')),str(int(regular)), str(n_days)])
+    if county:
+        full_trip_id = '-'.join([str(state.upper()), str(county.upper().replace(' ','-')),str(int(regular)), str(n_days)])
+    else:
+        full_trip_id = '-'.join([str(state.upper()), str(city.upper().replace(' ','-')),str(int(regular)), str(n_days)])
     if not check_full_trip_id(full_trip_id, debug):
         trip_location_ids, full_trip_details =[],[]
         county_list_info = db_start_location(county, state, city)
@@ -59,7 +62,7 @@ def get_fulltrip_data(state, city, n_days, full_day = True, regular = True, debu
             trip_location_ids.append(day_trip_id)
             full_trip_details.extend(details)
 
-        full_trip_id = '-'.join([str(state.upper()), str(county.upper().replace(' ','-')),str(int(regular)), str(n_days)])
+        # full_trip_id = '-'.join([str(state.upper()), str(county.upper().replace(' ','-')),str(int(regular)), str(n_days)])
         username = "zoesh"
         conn = psycopg2.connect(conn_str)
         cur = conn.cursor()

@@ -6,6 +6,29 @@ from collections import Counter
 conn_str = "dbname='travel_with_friends' user='zoesh' host='localhost'"
 my_key = 'AIzaSyDJh9EWCA_v0_B3SvjzjUA3OSVYufPJeGE'
 
+def check_valid_state(state):
+    '''
+    Only valid within the U.S.
+    '''
+    conn = psycopg2.connect(conn_str)
+    cur = conn.cursor()
+    state = state.replace('_',' ')
+    cur.execute("select distinct state from poi_detail_table_v2 where state = '%s';" %(state.title()))
+    c = cur.fetchone()
+    return bool(c)
+    
+def check_valid_city(state, city):
+    '''
+    Only valid within the U.S.
+    '''
+    conn = psycopg2.connect(conn_str)
+    cur = conn.cursor()
+    state = state.replace('_',' ')
+    city = city.replace('_',' ')
+    cur.execute("select distinct city, state from poi_detail_table_v2 where city = '%s' and state = '%s';" %(city.title(), state.title()))
+    c = cur.fetchone()
+    return bool(c)
+
 def find_county(state, city):
     '''
     Only valid within the U.S.
@@ -162,9 +185,9 @@ def create_event_id_list(big_,medium_,small_):
     if big_.shape[0] >= 1:
         if (medium_.shape[0] < 2) or (big_[0,1] <= medium_[0,1]):
             if small_.shape[0] >= 6:
-                event_ids = list(np.concatenate((big_[0,0], small_[0:6,0]),axis=0))  
+                event_ids = list(np.concatenate((big_[:1,0], small_[0:6,0]),axis=0))  
             else:
-                event_ids = list(np.concatenate((big_[0,0], small_[:,0]),axis=0)) 
+                event_ids = list(np.concatenate((big_[:1,0], small_[:,0]),axis=0)) 
             event_type = 'big'
         else:
             if small_.shape[0] >= 8:
