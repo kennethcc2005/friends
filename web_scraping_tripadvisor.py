@@ -8,9 +8,12 @@ import config
 import ast
 import bs4
 import geocoder
+from helpers import *
+from math import cos, radians
 import us_state_abbrevation as abb
 from bs4 import BeautifulSoup as BS
 from pymongo import MongoClient
+
 import re
 client = MongoClient()
 db = client.zoeshrm
@@ -25,8 +28,8 @@ api_key = api_key_list['api_key_list']
 
 
 def state_park_web(db_html):    
-    poi_detail_state_park_df=pd.DataFrame(columns=['index','name','street_address','city','state_abb','state','postal_code','country','address','coord_lat','coord_long','num_reviews','review_score','ranking','tag','raw_visit_length','fee','description','url',"geo_content", "adjueste_visit_length"])
-    error_message_df = pd.DataFrame(columns=['index','name','url','state_abb_error', 'state_error','address_error','geo_error','review_error','score_error','ranking_error','tag_error']) 
+    poi_detail_state_park_df=pd.DataFrame(columns=['index','name','street_address','city', 'county','state_abb','state','postal_code','country','address','coord_lat','coord_long','num_reviews','review_score','ranking','tag','raw_visit_length','fee','description','url',"geo_content", "adjusted_visit_length", "area"])
+    error_message_df = pd.DataFrame(columns=['index','name','url','state_abb_error', 'state_error','address_error','geo_error','review_error','score_error','ranking_error','tag_error','county_error']) 
     search_visit_length = re.compile('Recommended length of visit:')
     search_fee = re.compile('Fee:')
     cnt = 0
@@ -38,7 +41,7 @@ def state_park_web(db_html):
         #index
         #name
         input_list, error_message = [],[]
-        state_abb_error, state_error, address_error, geo_error, review_error, score_error, ranking_error, tag_error = 0,0,0,0,0,0,0,0
+        state_abb_error, state_error, address_error, geo_error, review_error, score_error, ranking_error, tag_error, county_error = 0,0,0,0,0,0,0,0,0
         latitude, longitude, geo_content = None, None, None
         #     print name
         url = page['url']
@@ -76,25 +79,39 @@ def state_park_web(db_html):
         else:
             address_error =1
             full_address = street_address+', '+city+', '+postal_code[:5]+', '+country
-        if (name in name_lst) and (full_address in full_address_lst):
-            continue
-        else:
-            name_lst.append(name)
-            full_address_lst.append(full_address)
+        # if (name in name_lst) and (full_address in full_address_lst):
+        #     continue
+        # else:
+        #     name_lst.append(name)
+        #     full_address_lst.append(full_address)
 
         #geo 
         
-        # try:
-        #     # latitude, longitude, geo_content = find_latlng(full_address, name, api_key)
-        #     result_longlat = find_latlng(full_address, name, api_i)
-        #     while result_longlat == False:
-        #         api_i+=1
-        #         result_longlat = find_latlng(full_address, name, api_i)
-        # except:
-        #     geo_error =1
-        #     latitude, longitude, geo_content = None, None, None
+        try:
+            # latitude, longitude, geo_content = find_latlng(full_address, name, api_key)
+            result_longlat = find_latlng(full_address, name, api_i)
+            while result_longlat == False:
+                api_i+=1
+                result_longlat = find_latlng(full_address, name, api_i)
+        except:
+            geo_error =1
+            latitude, longitude, county, geo_content = None, None, None, None
             
-        # [latitude, longitude, geo_content] = result_longlat
+        [latitude, longitude, county ,bbox, geo_content] = result_longlat
+
+        #area
+        if bbox !=None:
+            area = find_area(bbox)
+        else:
+            area = None
+
+        # county
+        if county == None:
+            try:
+                county = find_county(state, city)
+            except:
+                county_error =1
+
         #num_reviews
         try:
             num_reviews = s.find('div', attrs = {'class': 'rs rating'}).find('a').get('content')
@@ -145,10 +162,10 @@ def state_park_web(db_html):
             description = None
         adjusted_time = raw_to_adjust_time(raw_visit_length)
 
-        error_message = [len(poi_detail_state_park_df), name, url,state_abb_error, state_error, address_error, geo_error, review_error, score_error, ranking_error, tag_error]
+        error_message = [len(poi_detail_state_park_df), name, url,state_abb_error, state_error, address_error, geo_error, review_error, score_error, ranking_error, tag_error, county_error]
         error_message_df.loc[len(poi_detail_state_park_df)] =error_message
 
-        input_list = [len(poi_detail_state_park_df), name, street_address, city, state_abb, state, postal_code, country, full_address, latitude, longitude, num_reviews, review_score, ranking, tags, raw_visit_length, fee, description, url, geo_content, adjusted_time]
+        input_list = [len(poi_detail_state_park_df), name, street_address, city, county, state_abb, state, postal_code, country, full_address, latitude, longitude, num_reviews, review_score, ranking, tags, raw_visit_length, fee, description, url, geo_content, adjusted_time, area]
         poi_detail_state_park_df.loc[len(poi_detail_state_park_df)] = input_list
         
     #     print cnt, name
@@ -172,22 +189,29 @@ def find_latlng(full_address, name, i):
     if g_address.content['status'] == 'OVER_QUERY_LIMIT':
         return False
     if g_address.ok:
-        latitude= g_address.lat
-        longitude = g_address.lng
-        return [latitude, longitude, g_address.content]
+        county= g_address.county.replace("County","").upper().encode('utf-8').strip()
+        return [g_address.lat, g_address.lng, county ,g_address.bbox ,g_address.content]
     
     g_name = geocoder.google(name, key = api_key[i])
     if g_name.content['status'] == 'OVER_QUERY_LIMIT':
         return False
     if g_name.ok:
-        latitude= g_name.lat
-        longitude = g_name.lng
-        return [latitude, longitude, g_name.content]
+        county= g_name.county.replace("County","").upper().encode('utf-8').strip()
+        return [g_name.lat, g_name.lng, county, g_name.bbox, g_name.content]
     else:
-        latitude = None
-        longitude = None
-        return [latitude, longitude, None]
+        return [None, None, None, None]
 
+
+def find_area(box):
+#     to make thing simple, we use 111.111 
+#     we assume the distance:
+#     Latitude: 1 deg = 110.574 km
+#     Longitude: 1 deg = 111.320*cos(latitude) km
+#     if we need more accuracy number, we need to use different approach.
+#     ex. using Shapely to calculate polygon/ WGS84 formula
+    lat = (box["southwest"][0]-box["northeast"][0])*110.574
+    lng = 111.320*cos(radians(box["southwest"][1]-box["northeast"][1]))
+    return abs(lat*lng)
 
 def request_s(url):
     headers = {'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_10_1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/39.0.2171.95 Safari/537.36'}
