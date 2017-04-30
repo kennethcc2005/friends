@@ -4,10 +4,7 @@ from sqlalchemy import create_engine
 
 conn_str = "dbname='travel_with_friends' user='zoesh' host='localhost'"
 engine = create_engine('postgresql://zoesh@localhost:5432/travel_with_friends')
-df_counties_path = '/Users/zoesh/Desktop/travel_with_friends/travel_with_friends/us_cities_states_counties.csv'
-df_city_coords_path = '/Users/zoesh/Desktop/travel_with_friends/travel_with_friends/all_cities_coords.csv'
-poi_detail_path = '/Users/zoesh/Desktop/travel_with_friends/travel_with_friends/new_poi_df_v2.csv'
-def init__outside_db_tables():
+def init_outside_db_tables():
     outside_trip_id = '-'.join([str('test'.upper().replace(' ','-')), str('test'.upper().replace(' ','-')), \
                         'N'.upper(),str(int(True)), str(1)])
     outside_route_id = outside_trip_id + '-' + str(0)
@@ -43,4 +40,4 @@ def init__outside_db_tables():
     conn.commit()
     conn.close()
 if __name__ == '__main__':
-    init_db_tables()
+    init_outsie_db_tables()
