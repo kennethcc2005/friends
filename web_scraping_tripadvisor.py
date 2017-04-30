@@ -99,11 +99,6 @@ def state_park_web(db_html):
             
         [latitude, longitude, county ,bbox, geo_content] = result_longlat
 
-        #area
-        if bbox !=None:
-            area = find_area(bbox)
-        else:
-            area = None
 
         # county
         if county == None:
@@ -150,6 +145,15 @@ def state_park_web(db_html):
         else:
             raw_visit_length = None
             adjusted_time = None
+
+
+        #area to determine the time spent on poi
+        if bbox !=None:
+            area = find_area(bbox)
+            if adjusted_time ==None:
+                adjusted_time == area_to_adjust_time(area)
+
+
         #fee
         if s.find('b', text= search_fee):
             fee = s.find('b',text= search_fee).next_sibling.strip()
@@ -275,6 +279,20 @@ def raw_to_adjust_time(raw):
     if raw == "<1 hour":
         adjusted_time = 60
     return adjusted_time
+
+def area_to_adjust_time(area):
+
+    if area<34:
+        adjusted_time =  60
+    elif area<500:
+        adjusted_time = 120
+    elif area<2000:
+        adjusted_time = 180
+    else:
+        adjusted_time = 240
+    return adjusted_time
+
+
     #error_message
     #state_abb_error : state_abb can not change to state name/ either state_abb is already state name or state_abb is not in United States
     #state_error : no state can be found
