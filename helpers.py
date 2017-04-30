@@ -17,7 +17,7 @@ def check_valid_state(state):
     c = cur.fetchone()
     return bool(c)
     
-def check_valid_city(state, city):
+def check_valid_city(city,state):
     '''
     Only valid within the U.S.
     '''
@@ -36,7 +36,7 @@ def find_county(state, city):
     conn = psycopg2.connect(conn_str)
     cur = conn.cursor()
     city = city.replace('_',' ')
-    cur.execute("select distinct county from poi_detail_table where city = '%s' and state = '%s';" %(city.title(), state.title()))
+    cur.execute("select distinct county from poi_detail_table_v2 where city = '%s' and state = '%s';" %(city.title(), state.title()))
 
     county = cur.fetchone()
     conn.close()
@@ -92,7 +92,7 @@ def db_event_cloest_distance(trip_locations_id=None,event_ids=None, event_type =
     conn.close()
 
     points = check_NO_1(points, city_name)
-    print 'db_distance',points
+    # print 'db_distance',points
     n,D = mk_matrix(points[:,1:3], geopy_dist)
     if len(points) >= 3:
         if event_type == 'add':
@@ -160,7 +160,7 @@ def check_travel_time_id(new_id):
     '''
     conn = psycopg2.connect(conn_str)
     cur = conn.cursor()
-    cur.execute("select google_driving_time from google_travel_time_table where id_ = '%s'" %(new_id))
+    cur.execute("select google_driving_time from google_travel_time_table where id_field = '%s'" %(new_id))
     a = cur.fetchone()
     conn.close()
     if bool(a):
@@ -284,7 +284,7 @@ def db_google_driving_walking_time(event_ids, event_type):
         else:
             
             cur.execute("select orig_name, dest_name, google_driving_time, google_walking_time from google_travel_time_table \
-                         where id_ = '%s'" %(id_))
+                         where id_field = '%s'" %(id_))
             orig_name, dest_name, google_driving_time, google_walking_time = cur.fetchone()
             name_list.append(orig_name+" to "+ dest_name)
             google_ids.append(id_)
@@ -341,9 +341,9 @@ def db_day_trip_details(event_ids, i):
     details = []
     #details dict includes: id, name,address, day
     for event_id in event_ids:
-        cur.execute("select index, name, address from poi_detail_table_v2    where index = %s;" %(event_id))
+        cur.execute("select index, name, address, coord_lat, coord_long from poi_detail_table_v2 where index = %s;" %(event_id))
         a = cur.fetchone()
-        details.append(str({'id': a[0],'name': a[1],'address': a[2], 'day': i}))
+        details.append(str({'id': a[0],'name': a[1],'address': a[2], 'day': i, 'coord_lat': a[3], 'coord_long': a[4]}))
     conn.close()
     
     return details
