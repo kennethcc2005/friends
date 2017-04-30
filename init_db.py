@@ -6,7 +6,7 @@ conn_str = "dbname='travel_with_friends' user='zoesh' host='localhost'"
 engine = create_engine('postgresql://zoesh@localhost:5432/travel_with_friends')
 df_counties_path = '/Users/zoesh/Desktop/travel_with_friends/travel_with_friends/us_cities_states_counties.csv'
 df_city_coords_path = '/Users/zoesh/Desktop/travel_with_friends/travel_with_friends/all_cities_coords.csv'
-poi_detail_path = '/Users/zoesh/Desktop/travel_with_friends/travel_with_friends/new_poi_df_v2.csv'
+poi_detail_path = '/Users/zoesh/Desktop/travel_with_friends/travel_with_friends/poi_detail_table_final_v1.csv'
 def init_db_tables():
     full_trip_table = pd.DataFrame(columns =['username', 'full_trip_id', 'trip_location_ids', 'regular', 'county', 'state', 'details', 'n_days'])
 
