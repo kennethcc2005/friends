@@ -36,7 +36,7 @@ def find_county(state, city):
     conn = psycopg2.connect(conn_str)
     cur = conn.cursor()
     city = city.replace('_',' ')
-    cur.execute("select distinct county from poi_detail_table_v2 where city = '%s' and state = '%s';" %(city.title(), state.title()))
+    cur.execute("select distinct county from poi_detail_table where city = '%s' and state = '%s';" %(city.title(), state.title()))
 
     county = cur.fetchone()
     conn.close()
