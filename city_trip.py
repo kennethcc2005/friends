@@ -72,7 +72,7 @@ def get_fulltrip_data(state, city, n_days, full_day = True, regular = True, debu
         conn.commit()
         conn.close()
         print "finish update %s, %s into database" %(state, county)
-        return full_trip_details
+        return full_trip_id, full_trip_details
     else:
         print "%s, %s already in database" %(state, county) 
         conn = psycopg2.connect(conn_str)
@@ -80,5 +80,5 @@ def get_fulltrip_data(state, city, n_days, full_day = True, regular = True, debu
         cur.execute("select details from full_trip_table where full_trip_id = '%s';" %(full_trip_id)) 
         details = cur.fetchone()[0]        
         conn.close()
-        details = ast.literal_eval(details)
-        return details
+        full_trip_details = ast.literal_eval(details)
+        return full_trip_id, full_trip_details
