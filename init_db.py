@@ -12,7 +12,7 @@ def init_db_tables():
 
     day_trip_locations_table = pd.DataFrame(columns =['trip_locations_id','full_day', 'regular', 'county', 'state','details','event_type','event_ids'])
 
-    google_travel_time_table = pd.DataFrame(columns =['id_','orig_name','orig_idx','dest_name','dest_idx','orig_coord_lat','orig_coord_long',\
+    google_travel_time_table = pd.DataFrame(columns =['id_field','orig_name','orig_idx','dest_name','dest_idx','orig_coord_lat','orig_coord_long',\
                                            'dest_coord_lat','dest_coord_long','orig_coords','dest_coords','google_driving_url',\
                                            'google_walking_url','driving_result','walking_result','google_driving_time',\
                                            'google_walking_time'])
@@ -52,7 +52,7 @@ def init_db_tables():
     cur.execute("ALTER TABLE poi_detail_table_v2 ADD PRIMARY KEY (index);")
     cur.execute("ALTER TABLE full_trip_table ADD PRIMARY KEY (index);")
     cur.execute("ALTER TABLE day_trip_table ADD PRIMARY KEY (index);")
-    cur.execute("ALTER TABLE google_travel_time_table ADD PRIMARY KEY (index);")
+    cur.execute("ALTER TABLE google_travel_time_table ADD PRIMARY KEY (id_field);")
     cur.execute("ALTER TABLE county_table ADD PRIMARY KEY (index);")
     cur.execute("ALTER TABLE full_trip_table ADD CONSTRAINT fk_full_trip_user_name FOREIGN KEY (username) REFERENCES auth_user (username);")
     conn.commit()

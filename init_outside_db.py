@@ -20,7 +20,7 @@ def init_outside_db_tables():
        'big','[2259, 2260,3486,3487,4951,4953,4952]']
     outside_trip_table.loc[0] = ['zoesh', outside_trip_id, '[outside_route_id]', '[2259, 2260,3486,3487,4951,4953,4952]', \
                                 'Test','Test','N',1,True, True, ["{'address': '15500 San Pasqual Valley Rd, Escondido, CA 92027, USA', 'id': 2259, 'day': 0, 'name': u'San Diego Zoo Safari Park'}", "{'address': 'Safari Walk, Escondido, CA 92027, USA', 'id': 2260, 'day': 0, 'name': u'Meerkat'}", "{'address': '1999 Citracado Parkway, Escondido, CA 92029, USA', 'id': 3486, 'day': 0, 'name': u'Stone'}", "{'address': '1999 Citracado Parkway, Escondido, CA 92029, USA', 'id': 3487, 'day': 0, 'name': u'Stone Brewery'}", "{'address': 'Mount Woodson Trail, Poway, CA 92064, USA', 'id': 4951, 'day': 0, 'name': u'Lake Poway'}", "{'address': '17130 Mt Woodson Rd, Ramona, CA 92065, USA', 'id': 4953, 'day': 0, 'name': u'Potato Chip Rock'}", "{'address': '17130 Mt Woodson Rd, Ramona, CA 92065, USA', 'id': 4952, 'day': 0, 'name': u'Mt. Woodson'}"]]
-    google_city_to_poi_table.loc[0] = [999999, 999999, 'Test','Test','Test','Test', 999999, 2871.0, 33.047769600024424, -117.29692141333341, \
+    google_city_to_poi_table.loc[0] = [999999, 999999, 'Test','Test','Test','Test', 2871.0, 33.047769600024424, -117.29692141333341, \
                                     33.124079753475236, -117.3177652511278, '33.0477696,-117.296921413', '33.1240797535,-117.317765251',\
                                     'https://maps.googleapis.com/maps/api/distancematrix/json?origins=33.0477696,-117.296921413&destinations=33.1240797535,-117.317765251&mode=driving&language=en-EN&sensor=false&key=AIzaSyDJh9EWCA_v0_B3SvjzjUA3OSVYufPJeGE',
                                     'https://maps.googleapis.com/maps/api/distancematrix/json?origins=33.0477696,-117.296921413&destinations=33.1240797535,-117.317765251&mode=walking&language=en-EN&sensor=false&key=AIzaSyDJh9EWCA_v0_B3SvjzjUA3OSVYufPJeGE',
@@ -40,4 +40,4 @@ def init_outside_db_tables():
     conn.commit()
     conn.close()
 if __name__ == '__main__':
-    init_outsie_db_tables()
+    init_outside_db_tables()
