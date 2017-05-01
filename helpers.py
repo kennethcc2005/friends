@@ -3,7 +3,7 @@ import simplejson
 import numpy as np
 from distance import *
 from collections import Counter
-conn_str = "dbname='travel_with_friends' user='zoesh' host='localhost'"
+conn_str = "dbname='travel_with_friends' user='Gon' host='localhost'"
 my_key = 'AIzaSyDJh9EWCA_v0_B3SvjzjUA3OSVYufPJeGE'
 
 def check_valid_state(state):
@@ -36,7 +36,7 @@ def find_county(state, city):
     conn = psycopg2.connect(conn_str)
     cur = conn.cursor()
     city = city.replace('_',' ')
-    cur.execute("select distinct county from poi_detail_table_v2 where city = '%s' and state = '%s';" %(city.title(), state.title()))
+    cur.execute("select distinct county from county_table where city = '%s' and state = '%s';" %(city.title(), state.title()))
 
     county = cur.fetchone()
     conn.close()
@@ -113,6 +113,8 @@ def db_event_cloest_distance(trip_locations_id=None,event_ids=None, event_type =
 
 def check_NO_1(poi_list, city_name):
     city_name = city_name.replace('_',' ')
+    if len(poi_list)==1:
+        return np.array(poi_list)
     for i, poi in enumerate(poi_list):
         if (poi[3] == city_name) and (poi[4]==1):
             number_one =poi_list.pop(i)
@@ -181,38 +183,50 @@ def sorted_events(info,ix):
 
 #Need to make this more efficient
 def create_event_id_list(big_,medium_,small_):
+    # print big_,medium_,small_
     event_type = ''
     if big_.shape[0] >= 1:
         if (medium_.shape[0] < 2) or (big_[0,1] <= medium_[0,1]):
             if small_.shape[0] >= 6:
                 event_ids = list(np.concatenate((big_[:1,0], small_[0:6,0]),axis=0))  
-            else:
+            elif small_.shape[0]>0:
                 event_ids = list(np.concatenate((big_[:1,0], small_[:,0]),axis=0)) 
+            else:
+                event_ids = list(np.array(sorted(big_[0:,:], key=lambda x: (x[1],-x[2])))[:,0])
             event_type = 'big'
         else:
             if small_.shape[0] >= 8:
                 event_ids = list(np.concatenate((medium_[0:2,0], small_[0:8,0]),axis=0))
-            else:
+            elif small_.shape[0]>0:
                 event_ids = list(np.concatenate((medium_[0:2,0], small_[:,0]),axis=0))
+            else:
+                event_ids = list(np.array(sorted(medium_[0:,:], key=lambda x: (x[1],-x[2])))[:,0])
             event_type = 'med'
     elif medium_.shape[0] >= 2:
         if small_.shape[0] >= 8:
             event_ids = list(np.concatenate((medium_[0:2,0], small_[0:8,0]),axis=0))
-        else:
+        elif small_.shape[0]>0:
             event_ids = list(np.concatenate((medium_[0:2,0], small_[:,0]),axis=0))
+        else:
+            event_ids = list(np.array(sorted(medium_[0:,:], key=lambda x: (x[1],-x[2])))[:,0])
         event_type = 'med'
     else:
         if small_.shape[0] >= 10:
-            if not medium_.shape[0]:
+            if medium_.shape[0]==0:
                 event_ids = list(np.array(sorted(small_[0:10,:], key=lambda x: (x[1],-x[2])))[:,0])
             else:
-                event_ids = list(np.array(sorted(np.vstack((medium_, small_[0:10,:])), key=lambda x: (x[1],-x[2])))[:,0])
+                event_ids = list(np.array(sorted(np.vstack((medium_[:1,:], small_[0:10,:])), key=lambda x: (x[1],-x[2])))[:,0])
+        elif small_.shape[0] > 0:
+            if medium_.shape[0]==0:
+                event_ids = list(np.array(sorted(small_[0:,:], key=lambda x: (x[1],-x[2])))[:,0])
+            else:
+                event_ids = list(np.array(sorted(np.vstack((medium_, small_)), key=lambda x: (x[1],-x[2])))[:,0])
+
         else:
-            if not medium_.shape[0]:
-                event_ids = list(np.array(sorted(small_[0:10,:], key=lambda x: (x[1],-x[2])))[:,0])
-            else:
-                event_ids = list(np.array(sorted(np.vstack((medium_,small_)), key=lambda x: (x[1],-x[2])))[:,0])
+            event_ids = list(np.array(sorted(medium_[0:,:], key=lambda x: (x[1],-x[2])))[:,0])
         event_type = 'small'
+    # else:
+
     return event_ids, event_type
 
 def db_google_driving_walking_time(event_ids, event_type):
@@ -266,13 +280,19 @@ def db_google_driving_walking_time(event_ids, event_type):
                 google_walking_time = walking_result['rows'][0]['elements'][0]['duration']['value']/60
             except:
                 google_walking_time = 9999
-            # print 'google_driving time': google_driving_time
+            # print 'google_driving time: ', google_driving_time
+            print orig_name ,dest_name
+
             cur.execute("select max(index) from  google_travel_time_table")
             index = cur.fetchone()[0]+1
             driving_result = str(driving_result).replace("'",'"')
             walking_result = str(walking_result).replace("'",'"')
             orig_name = orig_name.replace("'","''")
             dest_name = dest_name.replace("'","''")
+            
+            print index, id_, orig_name, orig_idx, dest_name, dest_idx, orig_coord_lat, orig_coord_long, dest_coord_lat,\
+                                   dest_coord_long, orig_coords, dest_coords, google_driving_url, google_walking_url,\
+                                   str(driving_result), str(walking_result), google_driving_time, google_walking_time
             cur.execute("INSERT INTO google_travel_time_table VALUES (%i, '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s','%s', '%s', '%s', '%s', '%s', '%s', %s, %s);"%(index, id_, orig_name, orig_idx, dest_name, dest_idx, orig_coord_lat, orig_coord_long, dest_coord_lat,\
                                    dest_coord_long, orig_coords, dest_coords, google_driving_url, google_walking_url,\
                                    str(driving_result), str(walking_result), google_driving_time, google_walking_time))
@@ -297,9 +317,14 @@ def db_google_driving_walking_time(event_ids, event_type):
 def db_remove_extra_events(event_ids, driving_time_list,walking_time_list, max_time_spent=600):
     conn = psycopg2.connect(conn_str)
     cur = conn.cursor()   
-    cur.execute("SELECT DISTINCT SUM(adjusted_visit_length) FROM poi_detail_table_v2 WHERE index IN %s;" %(tuple(event_ids),))
-    time_spent = cur.fetchone()[0]
-    conn.close()
+    if len(event_ids) > 1:
+        cur.execute("SELECT DISTINCT SUM(adjusted_visit_length) FROM poi_detail_table_v2 WHERE index IN %s;" %(tuple(event_ids),))
+        time_spent = cur.fetchone()[0]
+        conn.close()
+    else:
+        cur.execute("SELECT DISTINCT SUM(adjusted_visit_length) FROM poi_detail_table_v2 WHERE index = %s;" %(event_ids))
+        time_spent = cur.fetchone()[0]
+        conn.close()
     travel_time = int(sum(np.minimum(np.array(driving_time_list),np.array(walking_time_list))))
     time_spent = int(time_spent) + travel_time
     if time_spent > max_time_spent:
@@ -313,9 +338,14 @@ def db_remove_extra_events(event_ids, driving_time_list,walking_time_list, max_t
 def db_adjust_events(event_ids, driving_time_list,walking_time_list, not_visited_poi_lst, event_type, city, max_time_spent=600):
     conn = psycopg2.connect(conn_str)
     cur = conn.cursor()   
-    cur.execute("SELECT DISTINCT SUM(adjusted_visit_length) FROM poi_detail_table_v2 WHERE index IN %s;" %(tuple(event_ids),))
-    time_spent = cur.fetchone()[0]
-    conn.close()
+    if len(event_ids) > 1:
+        cur.execute("SELECT DISTINCT SUM(adjusted_visit_length) FROM poi_detail_table_v2 WHERE index IN %s;" %(tuple(event_ids),))
+        time_spent = cur.fetchone()[0]
+        conn.close()
+    else:
+        cur.execute("SELECT DISTINCT SUM(adjusted_visit_length) FROM poi_detail_table_v2 WHERE index = %s;" %(event_ids[0]))
+        time_spent = cur.fetchone()[0]
+        conn.close()
     travel_time = int(sum(np.minimum(np.array(driving_time_list),np.array(walking_time_list))))
     time_spent = int(time_spent) + travel_time
     if time_spent > max_time_spent:

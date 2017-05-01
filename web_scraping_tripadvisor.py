@@ -110,19 +110,26 @@ def state_park_web(db_html):
         #num_reviews
         try:
             num_reviews = s.find('div', attrs = {'class': 'rs rating'}).find('a').get('content')
-
+            if not num_reviews:
+                num_reviews = 0
         except:
             try:
                 num_reviews = s.find('a', {'property': "reviewCount"}).get('content')
+                if not num_reviews:
+                    num_reviews = 0
             except:
                 num_reviews = 0
                 review_error=1 
         #review_score
         try:
             review_score = s.find('div', attrs = {'class': 'heading_rating separator'}).find('img').get('content')
+            if not review_score:
+                review_score =0
         except:
             try:
                 review_score = s.find('span', {'property': "ratingValue"}).get('content')
+                if not review_score:
+                    review_score =0
             except:
                 review_score = 0 
                 score_error =1
