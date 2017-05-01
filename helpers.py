@@ -5,6 +5,7 @@ from distance import *
 from collections import Counter
 conn_str = "dbname='travel_with_friends' user='Gon' host='localhost'"
 my_key = 'AIzaSyDJh9EWCA_v0_B3SvjzjUA3OSVYufPJeGE'
+my_key = "AIzaSyAA9Te-Dpi6ruT3SDpaZzVXQtlRshf_jsk"
 
 def check_valid_state(state):
     '''
@@ -256,6 +257,7 @@ def db_google_driving_walking_time(event_ids, event_type):
                                     format(orig_coords.replace(' ',''),dest_coords.replace(' ',''),my_key)
             google_walking_url = "https://maps.googleapis.com/maps/api/distancematrix/json?origins={0}&destinations={1}&mode=walking&language=en-EN&sensor=false&key={2}".\
                                     format(orig_coords.replace(' ',''),dest_coords.replace(' ',''),my_key)
+
             driving_result= simplejson.load(urllib.urlopen(google_driving_url))
             walking_result= simplejson.load(urllib.urlopen(google_walking_url))
             if driving_result['rows'][0]['elements'][0]['status'] == 'ZERO_RESULTS':
@@ -281,7 +283,9 @@ def db_google_driving_walking_time(event_ids, event_type):
             except:
                 google_walking_time = 9999
             # print 'google_driving time: ', google_driving_time
-            print orig_name ,dest_name
+            
+            google_driving_url = google_driving_url.replace("'s","%27")
+            google_walking_url = google_walking_url.replace("'s","%27")
 
             cur.execute("select max(index) from  google_travel_time_table")
             index = cur.fetchone()[0]+1
@@ -289,10 +293,7 @@ def db_google_driving_walking_time(event_ids, event_type):
             walking_result = str(walking_result).replace("'",'"')
             orig_name = orig_name.replace("'","''")
             dest_name = dest_name.replace("'","''")
-            
-            print index, id_, orig_name, orig_idx, dest_name, dest_idx, orig_coord_lat, orig_coord_long, dest_coord_lat,\
-                                   dest_coord_long, orig_coords, dest_coords, google_driving_url, google_walking_url,\
-                                   str(driving_result), str(walking_result), google_driving_time, google_walking_time
+
             cur.execute("INSERT INTO google_travel_time_table VALUES (%i, '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s','%s', '%s', '%s', '%s', '%s', '%s', %s, %s);"%(index, id_, orig_name, orig_idx, dest_name, dest_idx, orig_coord_lat, orig_coord_long, dest_coord_lat,\
                                    dest_coord_long, orig_coords, dest_coords, google_driving_url, google_walking_url,\
                                    str(driving_result), str(walking_result), google_driving_time, google_walking_time))
