@@ -13,11 +13,20 @@ def get_fulltrip_data(state, city, n_days, full_day = True, regular = True, debu
     if not check_full_trip_id(full_trip_id, debug):
         trip_location_ids, full_trip_details =[],[]
         county_list_info = db_start_location(county, state, city)
+        # print county_list_info
+        if county_list_info.shape[0] == 0:
+            print city, state, county, "is not in our database!!!!?"
+            return None
+        new_end_day = max(county_list_info.shape[0]/6, 1)
+
+        if  n_days > new_end_day:
+            return get_fulltrip_data(state, city, new_end_day) 
         time_spent = county_list_info[:,3]
         poi_coords = county_list_info[:,1:3]
         kmeans = KMeans(n_clusters=n_days).fit(poi_coords)
         day_labels = kmeans.labels_
         day_order = kmeans_leabels_day_order(day_labels)
+        # print day_labels, day_order
         not_visited_poi_lst = []
         for i,v in enumerate(day_order):
             day_trip_id = '-'.join([str(state), str(county.upper().replace(' ','-')),str(int(regular)), str(n_days),str(i)])
@@ -33,12 +42,16 @@ def get_fulltrip_data(state, city, n_days, full_day = True, regular = True, debu
                         med_ix.append(ix)
                     else:
                         small_ix.append(ix)
-            #need to double check this funct!
+            # print big_ix, med_ix, small_ix
             big_ = sorted_events(county_list_info, big_ix)
             med_ = sorted_events(county_list_info, med_ix)
             small_ = sorted_events(county_list_info, small_ix)
-            
+            if len(big_)+len(med_)+len(small_)==0:
+                print "not more event for days " , day_trip_id
+                break 
+            # print big_, med_, small_
             event_ids, event_type = create_event_id_list(big_, med_, small_)
+            # print event_ids, event_type
             event_ids, event_type = db_event_cloest_distance(event_ids = event_ids, event_type = event_type, city_name = city)
             # event_ids, google_ids, name_list, driving_time_list, walking_time_list = \
             event_ids, driving_time_list, walking_time_list = \
@@ -63,7 +76,7 @@ def get_fulltrip_data(state, city, n_days, full_day = True, regular = True, debu
             full_trip_details.extend(details)
 
         # full_trip_id = '-'.join([str(state.upper()), str(county.upper().replace(' ','-')),str(int(regular)), str(n_days)])
-        username = "zoesh"
+        username = "Gon"
         conn = psycopg2.connect(conn_str)
         cur = conn.cursor()
         cur.execute("select max(index) from full_trip_table;")

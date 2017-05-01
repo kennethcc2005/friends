@@ -40,9 +40,9 @@ def init_db_tables():
        3.0]
     full_trip_table.to_sql('full_trip_table',engine, if_exists = "replace")
     day_trip_locations_table.to_sql('day_trip_table',engine, if_exists = "replace")
-    google_travel_time_table.to_sql('google_travel_time_table',engine, if_exists = "replace")
-    poi_detail = pd.read_csv(poi_detail_path,index_col=0)
-    poi_detail.to_sql('poi_detail_table_v2',engine, index=True, if_exists = "replace")
+    # google_travel_time_table.to_sql('google_travel_time_table',engine, if_exists = "replace")
+    # poi_detail = pd.read_csv(poi_detail_path,index_col=0)
+    # poi_detail.to_sql('poi_detail_table_v2',engine, index=True, if_exists = "replace")
     df_counties = pd.read_csv(df_counties_path,sep='|')
     df_counties_u = df_counties.drop('City alias',axis = 1).drop_duplicates()
     df_counties_u.columns = ["city","state_abb","state","county"]
@@ -59,8 +59,9 @@ def init_db_tables():
     cur.execute("ALTER TABLE day_trip_table ADD PRIMARY KEY (index);")
     cur.execute("ALTER TABLE google_travel_time_table ADD PRIMARY KEY (id_field);")
     cur.execute("ALTER TABLE county_table ADD PRIMARY KEY (index);")
-    cur.execute("ALTER TABLE full_trip_table ADD CONSTRAINT fk_full_trip_user_name FOREIGN KEY (username) REFERENCES auth_user (username);")
+    # cur.execute("ALTER TABLE full_trip_table ADD CONSTRAINT fk_full_trip_user_name FOREIGN KEY (username) REFERENCES auth_user (username);")
     conn.commit()
     conn.close()
+    print "finish init database"
 if __name__ == '__main__':
     init_db_tables()
