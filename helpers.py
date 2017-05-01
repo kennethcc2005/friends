@@ -5,9 +5,8 @@ from distance import *
 from collections import Counter
 conn_str = "dbname='travel_with_friends' user='Gon' host='localhost'"
 my_key = 'AIzaSyDJh9EWCA_v0_B3SvjzjUA3OSVYufPJeGE'
-my_key = "AIzaSyAA9Te-Dpi6ruT3SDpaZzVXQtlRshf_jsk"
-my_key = "AIzaSyB6KDP3b55OlvCHb8U4PyVMfkLvNJEBidM"
-my_key = "AIzaSyBOfG3Pxp86WvRXMtx4BkcEezl6oHzGhiE"
+my_key = "AIzaSyCwIBKkWAkAcPjpO840fGPc1vnmK7h2UnY"
+my_key1 = "AIzaSyBrYcGsb8kIlIfa011bSbVF8X4NueqzZBo"
 def check_valid_state(state):
     '''
     Only valid within the U.S.
