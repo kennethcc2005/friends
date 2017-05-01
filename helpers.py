@@ -6,6 +6,7 @@ from collections import Counter
 conn_str = "dbname='travel_with_friends' user='Gon' host='localhost'"
 my_key = 'AIzaSyDJh9EWCA_v0_B3SvjzjUA3OSVYufPJeGE'
 my_key = "AIzaSyAA9Te-Dpi6ruT3SDpaZzVXQtlRshf_jsk"
+my_key = "AIzaSyB6KDP3b55OlvCHb8U4PyVMfkLvNJEBidM"
 
 def check_valid_state(state):
     '''
@@ -355,12 +356,11 @@ def db_adjust_events(event_ids, driving_time_list,walking_time_list, not_visited
         update_walking_time_list = walking_time_list[:-1]
         not_visited_poi_lst.append(event_ids[-1])
         return db_adjust_events(update_event_ids, update_driving_time_list, update_walking_time_list,not_visited_poi_lst, event_type, city)
-    elif (time_spent < max_time_spent - 240) and bool(not_visited_poi_lst):
+    elif (time_spent < max_time_spent - 240) and (len(not_visited_poi_lst)>1):
         event_ids = list(event_ids)
         event_ids.extend(not_visited_poi_lst)
         event_ids, event_type = db_event_cloest_distance(event_ids = event_ids, event_type = event_type, city_name = city)
-        event_ids, driving_time_list, walking_time_list = \
-            db_google_driving_walking_time(event_ids, event_type)
+        event_ids, driving_time_list, walking_time_list = db_google_driving_walking_time(event_ids, event_type)
         return db_adjust_events(event_ids, driving_time_list, walking_time_list, [], event_type, city)
     else:
         return event_ids, driving_time_list, walking_time_list, time_spent, not_visited_poi_lst
