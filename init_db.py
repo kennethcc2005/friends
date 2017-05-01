@@ -1,12 +1,17 @@
 import pandas as pd
 import psycopg2
+import os
 from sqlalchemy import create_engine
 
-conn_str = "dbname='travel_with_friends' user='zoesh' host='localhost'"
-engine = create_engine('postgresql://zoesh@localhost:5432/travel_with_friends')
-df_counties_path = '/Users/zoesh/Desktop/travel_with_friends/travel_with_friends/us_cities_states_counties.csv'
-df_city_coords_path = '/Users/zoesh/Desktop/travel_with_friends/travel_with_friends/all_cities_coords.csv'
-poi_detail_path = '/Users/zoesh/Desktop/travel_with_friends/travel_with_friends/poi_detail_table_final_v1.csv'
+path = os.getcwd()
+user = "Gon"
+conn_str = "dbname='travel_with_friends' user={} host='localhost'".format(user)
+engine = create_engine('postgresql://{}@localhost:5432/travel_with_friends'.format(user))
+df_counties_path = path+'/us_cities_states_counties.csv'
+df_city_coords_path = path+'/all_cities_coords.csv'
+poi_detail_path = path+'/poi_detail_table_final_v1.csv'
+
+
 def init_db_tables():
     full_trip_table = pd.DataFrame(columns =['username', 'full_trip_id', 'trip_location_ids', 'regular', 'county', 'state', 'details', 'n_days'])
 
