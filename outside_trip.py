@@ -1,22 +1,21 @@
 #Get events outside the city!!!
 import numpy as np
-from outside_helpers import *
-from helpers import *
 from distance import *
-
-
 '''
 Outside trip table: user_id, outside_trip_id, route_ids, origin_city, state, direction, n_days, default, full_day, details 
 outside route table: route_id, event_id_lst, event_type, origin_city, state, direction, details, default, 
 '''
-target_direction = 'N'
-origin_city = 'San Francisco'
-origin_state = 'California'
-conn_str = "dbname='travel_with_friends' user='zoesh' host='localhost'"
+# target_direction = 'N'
+# origin_city = 'San Francisco'
+# origin_state = 'California'
+# conn_str = "dbname='travel_with_friends' user='zoesh' host='localhost'"
 
-def outside_trip_poi_one_day(origin_city, origin_state, target_direction = 'N', n_days = 1, full_day = True, default = True, debug = True, user_id = 'admin'):
-    outside_trip_id = '-'.join([str(state.upper()), str(origin_city.upper().replace(' ','-')), target_direction,str(int(default)), str(n_days)])
-    if check_outside_trip_id(outside_trip_id, debug):
+def outside_trip_poi(origin_city, origin_state, target_direction = 'N', n_days = 1, \
+                    full_day = True, regular = True, debug = True, user_id = 'admin'):
+    outside_trip_id = '-'.join([str(origin_state.upper().replace(' ','-')), str(origin_city.upper().replace(' ','-')), \
+                        target_direction,str(int(regular)), str(n_days)])
+    if not check_outside_trip_id(outside_trip_id, debug):
+        furthest_len = 140
         if n_days == 1:
             furthest_len = 140
         #possible city coords, target city coord_lat, target city coord_long
@@ -35,7 +34,7 @@ def outside_trip_poi_one_day(origin_city, origin_state, target_direction = 'N', 
             city_infos.extend(city_info)
         city_infos = np.array(city_infos)
         poi_coords = city_infos[:,1:3]
-        n_routes = sum(1 for t in np.array(city_infos)[:,3] if t >= 120)    
+        n_routes = sum(1 for t in np.array(city_infos)[:,3] if t >= 120)/10
         if (n_routes>1) and (city_infos.shape[0]>=10):
             kmeans = KMeans(n_clusters=n_routes).fit(poi_coords)
         elif (city_infos.shape[0]> 20) or (n_routes>1):
@@ -43,10 +42,9 @@ def outside_trip_poi_one_day(origin_city, origin_state, target_direction = 'N', 
         else:
             kmeans = KMeans(n_clusters=1).fit(poi_coords)
         route_labels = kmeans.labels_
-
         # print n_routes, len(route_labels), city_infos.shape
         # print route_labels
-        outside_route_ids, outside_trip_details =[],[]
+        outside_route_ids, outside_trip_details,event_id_lst =[],[],[]
         for i in range(n_routes):
             current_events, big_ix, med_ix, small_ix = [], [],[], []
             for ix, label in enumerate(route_labels):
@@ -63,34 +61,48 @@ def outside_trip_poi_one_day(origin_city, origin_state, target_direction = 'N', 
             big_ = sorted_events(city_infos, big_ix)
             med_ = sorted_events(city_infos, med_ix)
             small_ = sorted_events(city_infos, small_ix)
-            print big_, len(big_), len(med_), len(small_)
             # need to update!!!!!!!!
             event_ids, event_type = create_event_id_list(big_, med_, small_)
             event_ids, event_type = db_outside_event_cloest_distance(coord_lat, coord_long, event_ids = event_ids, event_type = event_type)
             event_ids, google_ids, name_list, driving_time_list, walking_time_list =db_outside_google_driving_walking_time(city_id, coord_lat,coord_long, event_ids, event_type, origin_city = origin_city, origin_state = origin_state)
-            event_ids, driving_time_list, walking_time_list, total_time_spent = db_outside_remove_extra_events(city_id, event_ids, driving_time_list, walking_time_list)
-            db_address(event_ids)
-            outside_route_id = '-'.join(event_ids) 
-            values = db_outside_route_trip(outside_route_id, event_ids, origin_city, origin_state, default, full_day,n_days,i)
+            #why bug????
+            event_ids, driving_time_list, walking_time_list, total_time_spent = db_remove_outside_extra_events(event_ids, driving_time_list, walking_time_list)
+            outside_route_id = outside_trip_id + '-'+str(i)
+#             values = db_outside_route_trip_details(outside_route_id, event_ids, origin_city, origin_state, regular, full_day,n_days,i)
+            
+            details = db_outside_route_trip_details(event_ids,i)
             conn = psycopg2.connect(conn_str)
             cur = conn.cursor()
-
-            cur.execute("insert into outside_route_table (outside_route_id, full_day, default, origin_city, origin_state, target_direction, details, event_type, event_ids) \
-                        VALUES ( '%s', %s, %s, '%s', '%s', '%s', '%s', '%s')" \
-                        %( outside_route_id, full_day, default, origin_city, origin_state, target_direction, details, event_type, event_ids))
+            cur.execute('select max(index) from outside_route_table;')
+            new_index = cur.fetchone()[0] + 1
+            cur.execute("insert into outside_route_table (index, outside_route_id, full_day, regular, origin_city, origin_state, target_direction, details, event_type, event_ids, route_num) \
+                        VALUES (%s, '%s', %s, %s, '%s', '%s', '%s', '%s', '%s', '%s', %s);" \
+                        %(new_index, outside_route_id, full_day, regular, origin_city, origin_state, target_direction, str(details).replace("'","''"), event_type, str(event_ids) , i))
             conn.commit()
             conn.close()
             outside_route_ids.append(outside_route_id)
             outside_trip_details.extend(details)
+            event_id_lst.extend(event_ids)
 
-        user_id = "admin"
+        username = "zoesh"
         conn = psycopg2.connect(conn_str)
         cur = conn.cursor()
-        cur.execute("insert into outside_trip_table(user_id, outside_trip_id, outside_route_ids, origin_city, origin_state, target_direction, n_days, default, full_day, details) \
-                     VALUES ('%s', '%s', '%s', %s, '%s', '%s', '%s', %s)" \
-                     %(user_id, outside_trip_id, str(outside_route_ids), origin_city, origin_state, target_direction, n_days, default, full_day, outside_trip_details))
+        cur.execute('SELECT MAX(index) from outside_trip_table;')
+        new_index = cur.fetchone()[0] +1
+        cur.execute("INSERT into outside_trip_table(index, username, outside_trip_id, outside_route_ids, event_id_lst, origin_city, origin_state, target_direction, n_routes, regular, full_day, details) \
+                     VALUES (%s,'%s', '%s', '%s','%s', '%s', '%s', '%s', %s,%s,%s,'%s');" \
+                     %(new_index, username, outside_trip_id, str(outside_route_ids).replace("'","''"), str(event_id_lst), origin_city, origin_state, target_direction, n_routes, regular, full_day, str(outside_trip_details).replace("'","''")))
         conn.commit()
         conn.close()
-        return "finish update %s, %s, direction %s into database" %(target_state, target_city, target_direction)
+        print "finish update %s, %s, direction %s into database" %(origin_state, origin_city, target_direction)
+        return outside_trip_id, outside_trip_details
     else:
-        return "ALERT: %s, %s, direction %s already in database" %(target_state, target_city, target_direction)
+        print "ALERT: %s, %s, direction %s already in database" %(origin_state, origin_city, target_direction)
+        conn = psycopg2.connect(conn_str)
+        cur = conn.cursor()
+        cur.execute("SELECT DISTINCT outside_trip_id, details FROM outside_trip_table WHERE outside_trip_id = '%s';" %(outside_trip_id))
+        outside_trip_id, details = cur.fetchone()
+        details = ast.literal_eval(details)
+        conn.close()
+        return outside_trip_id, details
+

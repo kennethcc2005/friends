@@ -1,9 +1,10 @@
+# -*- coding: utf-8 -*-
 import psycopg2
 import ast
 import numpy as np
 import simplejson
 import urllib
-from helpers import *
+# from helpers import *
 conn_str = "dbname='travel_with_friends' user='zoesh' host='localhost'"
 
 def ajax_available_events(county, state):
@@ -20,7 +21,7 @@ def add_event(trip_locations_id, event_day, new_event_id=None, event_name=None, 
     conn = psycopg2.connect(conn_str)   
     cur = conn.cursor()   
     cur.execute("select * from day_trip_table where trip_locations_id='%s'" %(trip_locations_id))  
-    (index, trip_locations_id, full_day, default, county, state, detail, event_type, event_ids) = cur.fetchone()
+    (index, trip_locations_id, full_day, regular, county, state, detail, event_type, event_ids) = cur.fetchone()
     if unseen_event:
         index += 1
         trip_locations_id = '-'.join([str(eval(i)['id']) for i in eval(detail)])+'-'+event_name.replace(' ','-')+'-'+event_day
@@ -56,7 +57,7 @@ def add_event(trip_locations_id, event_day, new_event_id=None, event_name=None, 
                 detail = {'id': a[0],'name': a[1],'address': a[2], 'day': event_day}
                 details.append(detail)
             #need to make sure event detail can append to table!
-            cur.execute("insert into day_trip_table (trip_locations_id,full_day, default, county, state, details, event_type, event_ids) VALUES ( '%s', %s, %s, '%s', '%s', '%s', '%s', '%s')" %( trip_location_id, full_day, False, county, state, details, event_type, event_ids))
+            cur.execute("insert into day_trip_table (trip_locations_id,full_day, regular, county, state, details, event_type, event_ids) VALUES ( '%s', %s, %s, '%s', '%s', '%s', '%s', '%s')" %( trip_location_id, full_day, False, county, state, details, event_type, event_ids))
             conn.commit()
             conn.close()
             return trip_locations_id, details
@@ -69,7 +70,7 @@ def remove_event(trip_locations_id, remove_event_id, remove_event_name=None, eve
     conn = psycopg2.connect(conn_str)   
     cur = conn.cursor()   
     cur.execute("select * from day_trip_table where trip_locations_id='%s'" %(trip_locations_id))  
-    (index, trip_locations_id, full_day, default, county, state, detail, event_type, event_ids) = cur.fetchone()
+    (index, trip_locations_id, full_day, regular, county, state, detail, event_type, event_ids) = cur.fetchone()
     new_event_ids = ast.literal_eval(event_ids)
     new_event_ids.remove(remove_event_id)
     new_trip_locations_id = '-'.join(str(event_id) for event_id in new_event_ids)
@@ -85,12 +86,12 @@ def remove_event(trip_locations_id, remove_event_id, remove_event_name=None, eve
     new_detail = list(detail)
     new_detail.pop(remove_index)
     new_detail =  str(new_detail).replace("'","''")
-    default = False
+    regular = False
     cur.execute("select max(index) from day_trip_table where trip_locations_id='%s'" %(trip_locations_id)) 
     new_index = cur.fetchone()[0]
     new_index+=1
     cur.execute("INSERT INTO day_trip_table VALUES (%i, '%s', %s, %s, '%s', '%s', '%s', '%s','%s');" \
-                %(new_index, new_trip_locations_id, full_day, default, county, state, new_detail, event_type, new_event_ids))  
+                %(new_index, new_trip_locations_id, full_day, regular, county, state, new_detail, event_type, new_event_ids))  
     conn.commit()
     conn.close()
     return new_trip_locations_id, new_detail
@@ -107,7 +108,7 @@ def switch_event_list(full_trip_id, trip_locations_id, switch_event_id, switch_e
 #     new_trip_locations_id, new_detail = remove_event(trip_locations_id, switch_event_id)
     conn = psycopg2.connect(conn_str)   
     cur = conn.cursor()   
-    cur.execute("select name, city, county, state, coord_lat, coord_long,poi_rank, adjusted_normal_time_spent from poi_detail_table_v2 where index=%s" %(switch_event_id))
+    cur.execute("select name, city, county, state, coord_lat, coord_long,ranking, adjusted_visit_length from poi_detail_table_v2 where index=%s" %(switch_event_id))
     name, city, county, state,coord_lat, coord_long,poi_rank, adjusted_normal_time_spent = cur.fetchone()
     event_type = event_type_time_spent(adjusted_normal_time_spent)
     avialable_lst = ajax_available_events(county, state)
@@ -122,7 +123,7 @@ def switch_event_list(full_trip_id, trip_locations_id, switch_event_id, switch_e
             event_ids = [switch_event_id, index]
             event_ids, google_ids, name_list, driving_time_list, walking_time_list = db_google_driving_walking_time(event_ids, event_type='switch')
             if min(driving_time_list[0], walking_time_list[0]) <= 60:
-                cur.execute("select poi_rank, rating, adjusted_normal_time_spent from poi_detail_table_v2 where index=%s" %(index))
+                cur.execute("select ranking, review_score, adjusted_visit_length from poi_detail_table_v2 where index=%s" %(index))
                 target_poi_rank, target_rating, target_adjusted_normal_time_spent = cur.fetchone()
                 target_event_type = event_type_time_spent(target_adjusted_normal_time_spent)
                 switch_lst.append([target_poi_rank, target_rating, target_event_type==event_type])
@@ -143,8 +144,8 @@ def calculate_initial_compass_bearing(pointA, pointB):
     """
     Calculates the bearing between two points.
     The formulae used is the following:
-        θ = atan2(sin(Δlong).cos(lat2),
-                  cos(lat1).sin(lat2) − sin(lat1).cos(lat2).cos(Δlong))
+    theta = atan2(sin(delta(long)).cos(lat2),
+                  cos(lat1).sin(lat2) − sin(lat1).cos(lat2).cos(delta(long)))
     :Parameters:
       - `pointA: The tuple representing the latitude/longitude for the
         first point. Latitude and longitude must be in decimal degrees
@@ -180,22 +181,22 @@ def calculate_initial_compass_bearing(pointA, pointB):
 def direction_from_orgin(start_coord_long,  start_coord_lat, target_coord_long, target_coord_lat):
     angle = calculate_initial_compass_bearing((start_coord_lat, start_coord_long), (target_coord_lat, target_coord_long))
     if (angle > 45) and (angle < 135):
-        return 'N'
-    elif (angle > 135) and (angle < 215):
-        return 'W'
-    elif (angle > 215) and (angle < 305):
-        return 'S'
-    else:
         return 'E'
+    elif (angle > 135) and (angle < 215):
+        return 'S'
+    elif (angle > 215) and (angle < 305):
+        return 'W'
+    else:
+        return 'N'
     
 def travel_outside_coords(current_city, current_state, direction=None, n_days=1):
     conn = psycopg2.connect(conn_str)   
     cur = conn.cursor() 
     #coord_long, coord_lat
-    cur.execute("select index, coord_lat, coord_long from all_cities_coords where city ='%s' and state = '%s';" %(current_city, current_state)) 
+    cur.execute("select index, coord_lat, coord_long from all_cities_coords_table where city ='%s' and state = '%s';" %(current_city, current_state)) 
     id_, coord_lat, coord_long = cur.fetchone()
     #city, coord_lat, coord_long
-    cur.execute("select distinct city, coord_lat, coord_long from all_cities_coords where city !='%s' and state = '%s';" %(current_city, current_state))  
+    cur.execute("select distinct city, coord_lat, coord_long from all_cities_coords_table where city !='%s' and state = '%s';" %(current_city, current_state))  
     coords = cur.fetchall()     
     conn.close()
     
@@ -207,8 +208,9 @@ def check_outside_trip_id(outside_trip_id, debug):
     '''
     conn = psycopg2.connect(conn_str)  
     cur = conn.cursor()  
-    cur.execute("select route_ids from outside_trip_table where outside_trip_id = '%s'" %(outside_trip_id)) 
+    cur.execute("select outside_trip_id from outside_trip_table where outside_trip_id = '%s'" %(outside_trip_id)) 
     a = cur.fetchone()
+    print 'outside stuff id', a, bool(a)
     conn.close()
     if bool(a):
         if not debug: 
@@ -218,17 +220,17 @@ def check_outside_trip_id(outside_trip_id, debug):
     else:
         return False
 
-def db_outside_route_trip_details(event_ids, i):
+def db_outside_route_trip_details(event_ids, route_i):
     conn=psycopg2.connect(conn_str)
     cur = conn.cursor()
     details = []
     #details dict includes: id, name,address, day
     for event_id in event_ids:
-        cur.execute("select index, name, address from poi_detail_table_v2 where index = %s;" %(event_id))
+        cur.execute("select index, name, address, coord_lat, coord_long from poi_detail_table_v2 where index = %s;" %(event_id))
         a = cur.fetchone()
-        details.append(str({'id': a[0],'name': a[1],'address': a[2], 'route': i}))
+        details.append({'id': a[0],'name': a[1],'address': a[2], 'coord_lat': a[3], 'coord_long':a[4], 'route': route_i})
     conn.close()
-    return [outside_route_ids, full_day, default, city, state, details]
+    return details
 
 def db_outside_google_driving_walking_time(city_id, start_coord_lat, start_coord_long, event_ids, event_type, origin_city, origin_state):
     '''
@@ -295,14 +297,14 @@ def db_outside_google_driving_walking_time(city_id, start_coord_lat, start_coord
         driving_time_list.extend([city_to_poi_driving_time]*2)
         walking_time_list.extend([city_to_poi_walking_time]*2)
     else:
-        cur.execute("select orig_name, dest_name, google_driving_time, google_walking_time from google_city_to_poi_table \
+        cur.execute("select orig_name, dest_name, city_to_poi_driving_time, city_to_poi_walking_time from google_city_to_poi_table \
                     where city_to_poi_id = %s " %(city_to_poi_id))
         orig_name, dest_name, city_to_poi_driving_time, city_to_poi_walking_time = cur.fetchone()
         name_list.append(orig_name+" to "+ dest_name)
-        google_ids.append(id_)
-        driving_time_list.append(city_to_poi_driving_time)
-        walking_time_list.append(city_to_poi_walking_time)
-
+        google_ids.extend([city_to_poi_id]*2)
+        driving_time_list.extend([city_to_poi_driving_time]*2)
+        walking_time_list.extend([city_to_poi_walking_time]*2)
+    
     for i,v in enumerate(event_ids[:-1]):
         id_ = str(v) + '0000'+str(event_ids[i+1])
         result_check_travel_time_id = check_travel_time_id(id_)
@@ -319,6 +321,7 @@ def db_outside_google_driving_walking_time(city_id, start_coord_lat, start_coord
                                     format(orig_coords.replace(' ',''),dest_coords.replace(' ',''),my_key)
             google_walking_url = "https://maps.googleapis.com/maps/api/distancematrix/json?origins={0}&destinations={1}&mode=walking&language=en-EN&sensor=false&key={2}".\
                                     format(orig_coords.replace(' ',''),dest_coords.replace(' ',''),my_key)
+                
             driving_result= simplejson.load(urllib.urlopen(google_driving_url))
             walking_result= simplejson.load(urllib.urlopen(google_walking_url))
             if driving_result['rows'][0]['elements'][0]['status'] == 'ZERO_RESULTS':
@@ -361,7 +364,7 @@ def db_outside_google_driving_walking_time(city_id, start_coord_lat, start_coord
         else:
             
             cur.execute("select orig_name, dest_name, google_driving_time, google_walking_time from google_travel_time_table \
-                         where id_ = '%s'" %(id_))
+                         where id_field = '%s'" %(id_))
             orig_name, dest_name, google_driving_time, google_walking_time = cur.fetchone()
             name_list.append(orig_name+" to "+ dest_name)
             google_ids.append(id_)
@@ -394,14 +397,18 @@ def db_outside_event_cloest_distance(coord_lat, coord_long, trip_locations_id=No
             # create a greedy tour, visiting city 'i' first
             z = length(tour, D)
             z = localsearch(tour, z, D)
-            return np.array(event_ids)[tour[1：]], event_type
+            tour = np.array(tour[1:])-1
+            event_ids = np.array(event_ids)
+            return np.array(event_ids)[tour[1:]], event_type
         #need to figure out other cases
         else:
             tour = nearest_neighbor(n, 0, D)
             # create a greedy tour, visiting city 'i' first
             z = length(tour, D)
             z = localsearch(tour, z, D)
-            return np.array(event_ids)[tour[1:]], event_type
+            tour = np.array(tour[1:])-1
+            event_ids = np.array(event_ids)
+            return event_ids[tour], event_type
     else:
         return np.array(event_ids), event_type
 
@@ -417,15 +424,18 @@ def check_city_to_poi(city_to_poi_id):
     else:
         return False
 
-def db_remove_outside_extra_events(event_ids, driving_time_list,walking_time_list, max_time_spent=480):
+def db_remove_outside_extra_events(event_ids, driving_time_list,walking_time_list, max_time_spent=600):
     conn = psycopg2.connect(conn_str)
-    cur = conn.cursor()   
-    cur.execute("SELECT DISTINCT SUM(adjusted_normal_time_spent) FROM poi_detail_table_v2 WHERE index IN %s;" %(tuple(event_ids),))
+    cur = conn.cursor()  
+    if len(event_ids) == 1:
+        cur.execute("SELECT DISTINCT SUM(adjusted_visit_length) FROM poi_detail_table_v2 WHERE index = %s;" %(event_ids[0]))
+    else:
+        cur.execute("SELECT DISTINCT SUM(adjusted_visit_length) FROM poi_detail_table_v2 WHERE index IN %s;" %(tuple(event_ids),))
     total_travel_time = sum(np.minimum(np.array(driving_time_list),np.array(walking_time_list)))
-    time_spent = cur.fetchone()[0] + total_travel_time
+    time_spent = float(cur.fetchone()[0]) + float(total_travel_time)
     conn.close()
     if len(event_ids) == 1:
-        return event_ids, update_driving_time_list, update_walking_time_list, 480
+        return event_ids, driving_time_list, walking_time_list, time_spent
     if time_spent > max_time_spent:
         update_event_ids = event_ids[:-1]
         update_driving_time_list = driving_time_list[:-1]
