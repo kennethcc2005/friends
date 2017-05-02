@@ -24,7 +24,6 @@ def outside_trip_poi(origin_city, origin_state, target_direction = 'N', n_days =
         check_cities_info = []
         for item in coords:
             direction = direction_from_orgin(coord_long,  coord_lat, item[2], item[1])
-            print  direction, coord_long, coord_lat, item[2], item[1], item[0]
             if (target_direction == direction) and (geopy_dist((item[1], item[2]), (coord_lat, coord_long)) < furthest_len):
                 check_cities_info.append(item)
         city_infos = []
