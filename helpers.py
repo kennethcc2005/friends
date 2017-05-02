@@ -349,17 +349,26 @@ def db_adjust_events(event_ids, driving_time_list,walking_time_list, not_visited
         conn.close()
     travel_time = int(sum(np.minimum(np.array(driving_time_list),np.array(walking_time_list))))
     time_spent = int(time_spent) + travel_time
-    if time_spent > max_time_spent:
+
+    if (time_spent > max_time_spent):
+
         update_event_ids = event_ids[:-1]
         update_driving_time_list = driving_time_list[:-1]
         update_walking_time_list = walking_time_list[:-1]
-        not_visited_poi_lst.append(event_ids[-1])
+        conn = psycopg2.connect(conn_str)
+        cur = conn.cursor()  
+        cur.execute("SELECT DISTINCT adjusted_visit_length FROM poi_detail_table_v2 WHERE index = %s;"%(event_ids[-1]))
+        if cur.fetchone()[0]<=240:
+            not_visited_poi_lst.append(event_ids[-1])
+        conn.close()
+        # print "del", update_event_ids, not_visited_poi_lst
         return db_adjust_events(update_event_ids, update_driving_time_list, update_walking_time_list,not_visited_poi_lst, event_type, city)
     elif (time_spent < max_time_spent - 240) and (len(not_visited_poi_lst)>1):
         event_ids = list(event_ids)
         event_ids.extend(not_visited_poi_lst)
         event_ids, event_type = db_event_cloest_distance(event_ids = event_ids, event_type = event_type, city_name = city)
         event_ids, driving_time_list, walking_time_list = db_google_driving_walking_time(event_ids, event_type)
+        # print "add", event_ids
         return db_adjust_events(event_ids, driving_time_list, walking_time_list, [], event_type, city)
     else:
         return event_ids, driving_time_list, walking_time_list, time_spent, not_visited_poi_lst

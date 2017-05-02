@@ -16,7 +16,7 @@ def get_fulltrip_data(state, city, n_days, full_day = True, regular = True, debu
         # print county_list_info
         if county_list_info.shape[0] == 0:
             print city, state, county, "is not in our database!!!!?"
-            return None
+            return [city, state, county, "is not in our database!!!!?"]
         new_end_day = max(county_list_info.shape[0]/6, 1)
 
         if  n_days > new_end_day:
@@ -48,6 +48,7 @@ def get_fulltrip_data(state, city, n_days, full_day = True, regular = True, debu
             small_ = sorted_events(county_list_info, small_ix)
             if len(big_)+len(med_)+len(small_)==0:
                 print "not more event for days " , day_trip_id
+                # return [day_trip_id, "not more event for days " ]
                 break 
             # print big_, med_, small_
             event_ids, event_type = create_event_id_list(big_, med_, small_)
@@ -85,7 +86,7 @@ def get_fulltrip_data(state, city, n_days, full_day = True, regular = True, debu
         conn.commit()
         conn.close()
         print "finish update %s, %s into database" %(state, county)
-        return full_trip_id, full_trip_details
+        # return full_trip_id, full_trip_details
     else:
         print "%s, %s already in database" %(state, county) 
         conn = psycopg2.connect(conn_str)
@@ -94,4 +95,4 @@ def get_fulltrip_data(state, city, n_days, full_day = True, regular = True, debu
         details = cur.fetchone()[0]        
         conn.close()
         full_trip_details = ast.literal_eval(details)
-        return full_trip_id, full_trip_details
+        # return full_trip_id, full_trip_details
