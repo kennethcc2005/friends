@@ -13,20 +13,22 @@ print len(c)
 cur.execute("select max(index) from full_trip_table;")
 full_trip_index = cur.fetchone()[0]
 print full_trip_index
-cur.execute("select county, state from full_trip_table where index='%s';"%(full_trip_index-10)) 
+cur.execute("select county, state from full_trip_table where index='%s';"%(full_trip_index)) 
 location = cur.fetchone()       
 print location
 cur.execute("select state, city from county_table where county ='%s' and state='%s';"%(location[0],location[1]))
 last_stop_location = cur.fetchall()[0]
 print last_stop_location
 last_stop =  c.index(last_stop_location)
+print last_stop
 conn.close()
 
 Not_data_for_county=[]
-for x in range(last_stop,len(c)):
+# for x in range(last_stop-10,len(c)):
+for x in range(len(c)):
     state, city = c[x]
-    if (state == 'Puerto Rico') or (state == 'Virgin Islands'):
-        continue
+    # if (state == 'Puerto Rico') or (state == 'Virgin Islands'):
+    #     continue
     print c[x]
     n_days = [1,2,3,4,5]
     for day in n_days:

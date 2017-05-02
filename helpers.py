@@ -6,7 +6,11 @@ from collections import Counter
 conn_str = "dbname='travel_with_friends' user='Gon' host='localhost'"
 my_key = 'AIzaSyDJh9EWCA_v0_B3SvjzjUA3OSVYufPJeGE'
 my_key = "AIzaSyCwIBKkWAkAcPjpO840fGPc1vnmK7h2UnY"
-my_key1 = "AIzaSyBrYcGsb8kIlIfa011bSbVF8X4NueqzZBo"
+my_key = "AIzaSyBrYcGsb8kIlIfa011bSbVF8X4NueqzZBo"
+my_key = "AIzaSyBI3vgFNrG5q_PuY2HcXQUsoV1Zcz5aMJk"
+my_key = 'AIzaSyCT26k-6c_OKIDm6a68Gb9VtGMHvgYTtr0'
+my_key = 'AIzaSyD8ctihvgUk075lMtW0T2Ath3Q9FI8P6Jo'
+my_key = 'AIzaSyCD8E7OLcsHZLXnhZuh7a3POC1Vh4OeD_w'
 def check_valid_state(state):
     '''
     Only valid within the U.S.
@@ -257,14 +261,13 @@ def db_google_driving_walking_time(event_ids, event_type):
                                     format(orig_coords.replace(' ',''),dest_coords.replace(' ',''),my_key)
             google_walking_url = "https://maps.googleapis.com/maps/api/distancematrix/json?origins={0}&destinations={1}&mode=walking&language=en-EN&sensor=false&key={2}".\
                                     format(orig_coords.replace(' ',''),dest_coords.replace(' ',''),my_key)
-
             driving_result= simplejson.load(urllib.urlopen(google_driving_url))
             walking_result= simplejson.load(urllib.urlopen(google_walking_url))
             if driving_result['rows'][0]['elements'][0]['status'] == 'ZERO_RESULTS':
                 google_driving_url = "https://maps.googleapis.com/maps/api/distancematrix/json?origins={0}&destinations={1}&mode=driving&language=en-EN&sensor=false&key={2}".\
                                     format(orig_name.replace(' ','+').replace('-','+'),dest_name.replace(' ','+').replace('-','+'),my_key)
                 driving_result= simplejson.load(urllib.urlopen(google_driving_url))
-                
+
             if walking_result['rows'][0]['elements'][0]['status'] == 'ZERO_RESULTS':
                 google_walking_url = "https://maps.googleapis.com/maps/api/distancematrix/json?origins={0}&destinations={1}&mode=walking&language=en-EN&sensor=false&key={2}".\
                                         format(orig_name.replace(' ','+').replace('-','+'),dest_name.replace(' ','+').replace('-','+'),my_key)
@@ -274,10 +277,12 @@ def db_google_driving_walking_time(event_ids, event_type):
                 new_event_ids.pop(i+1)
                 new_event_ids = db_event_cloest_distance(event_ids=new_event_ids, event_type = event_type)
                 return db_google_driving_walking_time(new_event_ids, event_type)
+            # print driving_result, driving_result['rows'][0]['elements'][0]['duration']['value']
             try:
                 google_driving_time = driving_result['rows'][0]['elements'][0]['duration']['value']/60
-            except:            
+            except: 
                 print v, id_, driving_result #need to debug for this
+                # google_driving_time = 60
             try:
                 google_walking_time = walking_result['rows'][0]['elements'][0]['duration']['value']/60
             except:
