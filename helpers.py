@@ -4,13 +4,10 @@ import simplejson
 import numpy as np
 from distance import *
 from collections import Counter
-conn_str = "dbname='travel_with_friends' user='Gon' host='localhost'"
-
-
 with open('api_key_list.config') as key_file:
     api_key_list = json.load(key_file)
 api_key = api_key_list["distance_api_key_list"]
-
+conn_str = api_key_list["conn_str"]
 def check_valid_state(state):
     '''
     Only valid within the U.S.

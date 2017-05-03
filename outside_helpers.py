@@ -5,8 +5,9 @@ import numpy as np
 import simplejson
 import urllib
 from helpers import *
-conn_str = "dbname='travel_with_friends' user='zoesh' host='localhost'"
-
+with open('api_key_list.config') as key_file:
+    api_key_list = json.load(key_file)
+conn_str = api_key_list["conn_str"]
 def ajax_available_events(county, state):
     county=county.upper()
     state = state.title()

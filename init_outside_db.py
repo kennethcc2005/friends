@@ -2,8 +2,11 @@ import pandas as pd
 import psycopg2
 from sqlalchemy import create_engine
 
-conn_str = "dbname='travel_with_friends' user='zoesh' host='localhost'"
-engine = create_engine('postgresql://zoesh@localhost:5432/travel_with_friends')
+with open('api_key_list.config') as key_file:
+    api_key_list = json.load(key_file)
+conn_str = api_key_list["conn_str"]
+engine_str = api_key_list["engine"]
+engine = create_engine(engine_str)
 def init_outside_db_tables():
     outside_trip_id = '-'.join([str('test'.upper().replace(' ','-')), str('test'.upper().replace(' ','-')), \
                         'N'.upper(),str(int(True)), str(1)])
