@@ -22,9 +22,9 @@ db.TripAdvisor
 ## import progressbar 
 
 abb2state_dict = abb.abb2state
-with open('api_key_list.config') as api_key_list_file:
-    api_key_list = json.load(api_key_list_file)
-api_key = api_key_list['api_key_list']
+with open('api_key_list.config') as key_file:
+    api_key_list = json.load(key_file)
+api_key_list["goecoder_api_key_list"]
 
 
 def state_park_web(db_html):    

@@ -4,7 +4,7 @@ import os
 from sqlalchemy import create_engine
 
 path = os.getcwd()
-user = "zoesh"
+user = "Gon"
 conn_str = "dbname='travel_with_friends' user={} host='localhost'".format(user)
 engine = create_engine('postgresql://{}@localhost:5432/travel_with_friends'.format(user))
 df_counties_path = path+'/us_cities_states_counties.csv'

@@ -27,6 +27,7 @@ Not_data_for_county=[]
 # for x in range(last_stop-10,len(c)):
 for x in range(len(c)):
     state, city = c[x]
+    # ('California', 'Newbury Park'), ('Alaska', 'Chignik Lake') have problem 
     # if (state == 'Puerto Rico') or (state == 'Virgin Islands'):
     #     continue
     print c[x]

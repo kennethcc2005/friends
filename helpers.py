@@ -1,16 +1,16 @@
+import json
 import psycopg2
 import simplejson
 import numpy as np
 from distance import *
 from collections import Counter
 conn_str = "dbname='travel_with_friends' user='Gon' host='localhost'"
-my_key = 'AIzaSyDJh9EWCA_v0_B3SvjzjUA3OSVYufPJeGE'
-my_key = "AIzaSyCwIBKkWAkAcPjpO840fGPc1vnmK7h2UnY"
-my_key = "AIzaSyBrYcGsb8kIlIfa011bSbVF8X4NueqzZBo"
-my_key = "AIzaSyBI3vgFNrG5q_PuY2HcXQUsoV1Zcz5aMJk"
-my_key = 'AIzaSyCT26k-6c_OKIDm6a68Gb9VtGMHvgYTtr0'
-my_key = 'AIzaSyD8ctihvgUk075lMtW0T2Ath3Q9FI8P6Jo'
-my_key = 'AIzaSyCD8E7OLcsHZLXnhZuh7a3POC1Vh4OeD_w'
+
+
+with open('api_key_list.config') as key_file:
+    api_key_list = json.load(key_file)
+api_key = api_key_list["distance_api_key_list"]
+
 def check_valid_state(state):
     '''
     Only valid within the U.S.
@@ -245,8 +245,9 @@ def db_google_driving_walking_time(event_ids, event_type):
     driving_time_list = []
     walking_time_list = []
     name_list = []
+    api_i =0
     for i,v in enumerate(event_ids[:-1]):
-        id_ = str(v) + '0000'+str(event_ids[i+1])
+        id_ = str(int(v)) + '0000'+str(int(event_ids[i+1]))
         result_check_travel_time_id = check_travel_time_id(id_)
         if not result_check_travel_time_id:
             cur.execute("select name, coord_lat, coord_long from poi_detail_table_v2 where index = %s"%(v))
@@ -257,21 +258,15 @@ def db_google_driving_walking_time(event_ids, event_type):
             dest_idx = event_ids[i+1]
             orig_coords = str(orig_coord_lat)+','+str(orig_coord_long)
             dest_coords = str(dest_coord_lat)+','+str(dest_coord_long)
-            google_driving_url = "https://maps.googleapis.com/maps/api/distancematrix/json?origins={0}&destinations={1}&mode=driving&language=en-EN&sensor=false&key={2}".\
-                                    format(orig_coords.replace(' ',''),dest_coords.replace(' ',''),my_key)
-            google_walking_url = "https://maps.googleapis.com/maps/api/distancematrix/json?origins={0}&destinations={1}&mode=walking&language=en-EN&sensor=false&key={2}".\
-                                    format(orig_coords.replace(' ',''),dest_coords.replace(' ',''),my_key)
-            driving_result= simplejson.load(urllib.urlopen(google_driving_url))
-            walking_result= simplejson.load(urllib.urlopen(google_walking_url))
-            if driving_result['rows'][0]['elements'][0]['status'] == 'ZERO_RESULTS':
-                google_driving_url = "https://maps.googleapis.com/maps/api/distancematrix/json?origins={0}&destinations={1}&mode=driving&language=en-EN&sensor=false&key={2}".\
-                                    format(orig_name.replace(' ','+').replace('-','+'),dest_name.replace(' ','+').replace('-','+'),my_key)
-                driving_result= simplejson.load(urllib.urlopen(google_driving_url))
 
-            if walking_result['rows'][0]['elements'][0]['status'] == 'ZERO_RESULTS':
-                google_walking_url = "https://maps.googleapis.com/maps/api/distancematrix/json?origins={0}&destinations={1}&mode=walking&language=en-EN&sensor=false&key={2}".\
-                                        format(orig_name.replace(' ','+').replace('-','+'),dest_name.replace(' ','+').replace('-','+'),my_key)
-                walking_result= simplejson.load(urllib.urlopen(google_walking_url))
+
+
+            google_result = find_google_result(orig_coords, dest_coords, orig_name, dest_name, api_i)
+            while google_result == False:
+                api_i+=1
+                google_result = find_google_result(orig_coords, dest_coords, orig_name, dest_name, api_i)
+            driving_result, walking_result = google_result
+
             if (driving_result['rows'][0]['elements'][0]['status'] == 'NOT_FOUND') and (walking_result['rows'][0]['elements'][0]['status'] == 'NOT_FOUND'):
                 new_event_ids = list(event_ids)
                 new_event_ids.pop(i+1)
@@ -281,8 +276,11 @@ def db_google_driving_walking_time(event_ids, event_type):
             try:
                 google_driving_time = driving_result['rows'][0]['elements'][0]['duration']['value']/60
             except: 
-                print v, id_, driving_result #need to debug for this
-                # google_driving_time = 60
+                print "id :", v
+                print"id_id: ", id_ 
+                print "result (please check location--most likely cannot drive between location):",driving_result #need to debug for this
+                print "we assume 60 mins for the transportation time"
+                google_driving_time = 60
             try:
                 google_walking_time = walking_result['rows'][0]['elements'][0]['duration']['value']/60
             except:
@@ -319,6 +317,28 @@ def db_google_driving_walking_time(event_ids, event_type):
     conn.close()
     # return event_ids, google_ids, name_list, driving_time_list, walking_time_list
     return event_ids, driving_time_list, walking_time_list
+
+def find_google_result(orig_coords, dest_coords, orig_name, dest_name, i):
+    google_driving_url = "https://maps.googleapis.com/maps/api/distancematrix/json?origins={0}&destinations={1}&mode=driving&language=en-EN&sensor=false&key={2}".\
+                                    format(orig_coords.replace(' ',''),dest_coords.replace(' ',''),api_key[i])
+    google_walking_url = "https://maps.googleapis.com/maps/api/distancematrix/json?origins={0}&destinations={1}&mode=walking&language=en-EN&sensor=false&key={2}".\
+                                    format(orig_coords.replace(' ',''),dest_coords.replace(' ',''),api_key[i])
+    driving_result= simplejson.load(urllib.urlopen(google_driving_url))
+    walking_result= simplejson.load(urllib.urlopen(google_walking_url))
+    if (driving_result['rows'][0]['elements'][0]['status'] == 'OVER_QUERY_LIMIT') or (walking_result['rows'][0]['elements'][0]['status'] == 'OVER_QUERY_LIMIT'):
+        return False
+
+
+    if driving_result['rows'][0]['elements'][0]['status'] == 'ZERO_RESULTS':
+        google_driving_url = "https://maps.googleapis.com/maps/api/distancematrix/json?origins={0}&destinations={1}&mode=driving&language=en-EN&sensor=false&key={2}".\
+                            format(orig_name.replace(' ','+').replace('-','+'),dest_name.replace(' ','+').replace('-','+'),api_key[api_i])
+        driving_result= simplejson.load(urllib.urlopen(google_driving_url))
+
+    if walking_result['rows'][0]['elements'][0]['status'] == 'ZERO_RESULTS':
+        google_walking_url = "https://maps.googleapis.com/maps/api/distancematrix/json?origins={0}&destinations={1}&mode=walking&language=en-EN&sensor=false&key={2}".\
+                            format(orig_name.replace(' ','+').replace('-','+'),dest_name.replace(' ','+').replace('-','+'),api_key[api_i])
+        walking_result= simplejson.load(urllib.urlopen(google_walking_url))
+    return [driving_result, walking_result]
 
 def db_remove_extra_events(event_ids, driving_time_list,walking_time_list, max_time_spent=600):
     conn = psycopg2.connect(conn_str)

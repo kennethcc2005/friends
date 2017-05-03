@@ -55,8 +55,7 @@ def get_fulltrip_data(state, city, n_days, full_day = True, regular = True, debu
             # print event_ids, event_type
             event_ids, event_type = db_event_cloest_distance(event_ids = event_ids, event_type = event_type, city_name = city)
             # event_ids, google_ids, name_list, driving_time_list, walking_time_list = \
-            event_ids, driving_time_list, walking_time_list = \
-                    db_google_driving_walking_time(event_ids, event_type)
+            event_ids, driving_time_list, walking_time_list = db_google_driving_walking_time(event_ids, event_type)
             # print 'event_ids, google_ids, name_list', event_ids, google_ids, name_list
             # print 'driving and walking time list: ', driving_time_list, walking_time_list
             # event_ids, driving_time_list, walking_time_list, total_time_spent = db_remove_extra_events(event_ids, driving_time_list, walking_time_list)
@@ -98,10 +97,10 @@ def get_fulltrip_data(state, city, n_days, full_day = True, regular = True, debu
         # return full_trip_id, full_trip_details
     else:
         print "%s, %s already in database" %(state, county) 
-        conn = psycopg2.connect(conn_str)
-        cur = conn.cursor()
-        cur.execute("select details from full_trip_table where full_trip_id = '%s';" %(full_trip_id)) 
-        details = cur.fetchone()[0]        
-        conn.close()
-        full_trip_details = ast.literal_eval(details)
+        # conn = psycopg2.connect(conn_str)
+        # cur = conn.cursor()
+        # cur.execute("select details from full_trip_table where full_trip_id = '%s';" %(full_trip_id)) 
+        # details = cur.fetchone()[0]        
+        # conn.close()
+        # full_trip_details = ast.literal_eval(details)
         # return full_trip_id, full_trip_details
