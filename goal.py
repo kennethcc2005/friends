@@ -1,5 +1,12 @@
 def thing to do():
 	print """
+	api:
+	1. user securities
+	2. Known issues: can create unlimited users if endpoints is known. should use CAPTCHA
+	3. Seperated auth for different cases get/post
+	4. Token needs to expire...now last forever!
+	"""
+	print """
 	outside :
 	1.	one way trip/ round trip
 	2.	allow user change
@@ -20,7 +27,6 @@ def thing to do():
 	5.	check full trip for all 5 days
 	6.	take out poi from poi_table where tag = ex. tour, ....
 	7.	add state == 'Puerto Rico', Virgin Islands' into our database poi_table
-
 
 
 
