@@ -144,7 +144,7 @@ def check_full_trip_id(full_trip_id, debug):
     else:
         return False
 
-def check_day_trip_id(day_trip_id, debug):
+def check_day_trip_id(day_trip_id):
     '''
     Check day trip id exist or not.  
     '''
@@ -154,10 +154,7 @@ def check_day_trip_id(day_trip_id, debug):
     a = cur.fetchone()
     conn.close()
     if bool(a):
-        if not debug: 
-            return a[0]
-        else:
-            return True
+        return True
     else:
         return False
 
@@ -265,7 +262,7 @@ def db_google_driving_walking_time(event_ids, event_type):
             while google_result == False:
                 api_i+=1
                 google_result = find_google_result(orig_coords, dest_coords, orig_name, dest_name, api_i)
-            driving_result, walking_result = google_result
+            driving_result, walking_result, google_driving_url, google_walking_url = google_result
 
             if (driving_result['rows'][0]['elements'][0]['status'] == 'NOT_FOUND') and (walking_result['rows'][0]['elements'][0]['status'] == 'NOT_FOUND'):
                 new_event_ids = list(event_ids)
@@ -287,8 +284,7 @@ def db_google_driving_walking_time(event_ids, event_type):
                 google_walking_time = 9999
             # print 'google_driving time: ', google_driving_time
             
-            google_driving_url = google_driving_url.replace("'s","%27")
-            google_walking_url = google_walking_url.replace("'s","%27")
+
 
             cur.execute("select max(index) from  google_travel_time_table")
             index = cur.fetchone()[0]+1
@@ -338,7 +334,9 @@ def find_google_result(orig_coords, dest_coords, orig_name, dest_name, i):
         google_walking_url = "https://maps.googleapis.com/maps/api/distancematrix/json?origins={0}&destinations={1}&mode=walking&language=en-EN&sensor=false&key={2}".\
                             format(orig_name.replace(' ','+').replace('-','+'),dest_name.replace(' ','+').replace('-','+'),api_key[api_i])
         walking_result= simplejson.load(urllib.urlopen(google_walking_url))
-    return [driving_result, walking_result]
+    google_driving_url = google_driving_url.replace("'s","%27")
+    google_walking_url = google_walking_url.replace("'s","%27")
+    return [driving_result, walking_result, google_driving_url, google_walking_url]
 
 def db_remove_extra_events(event_ids, driving_time_list,walking_time_list, max_time_spent=600):
     conn = psycopg2.connect(conn_str)
