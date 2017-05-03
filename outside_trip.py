@@ -1,6 +1,7 @@
 #Get events outside the city!!!
 import numpy as np
 from distance import *
+from outside_helpers import *
 '''
 Outside trip table: user_id, outside_trip_id, route_ids, origin_city, state, direction, n_days, default, full_day, details 
 outside route table: route_id, event_id_lst, event_type, origin_city, state, direction, details, default, 
@@ -69,7 +70,12 @@ def outside_trip_poi(origin_city, origin_state, target_direction = 'N', n_days =
             event_ids, driving_time_list, walking_time_list, total_time_spent = db_remove_outside_extra_events(event_ids, driving_time_list, walking_time_list)
             outside_route_id = outside_trip_id + '-'+str(i)
 #             values = db_outside_route_trip_details(outside_route_id, event_ids, origin_city, origin_state, regular, full_day,n_days,i)
-            
+            if check_outside_route_id(outside_route_id):
+                conn = psycopg2.connect(conn_str)
+                cur = conn.cursor()
+                cur.execute('DELETE FROM outside_route_table WHERE outside_route_id = %s;' %(outside_route_id))
+                conn.commit()
+                conn.close()
             details = db_outside_route_trip_details(event_ids,i)
             conn = psycopg2.connect(conn_str)
             cur = conn.cursor()

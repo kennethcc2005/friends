@@ -70,6 +70,15 @@ def get_fulltrip_data(state, city, n_days, full_day = True, regular = True, debu
             cur.execute('select max(index) from day_trip_table;')
             max_index = cur.fetchone()[0]
             index = max_index+1
+
+            #if exisitng day trip id..remove those...
+            if check_day_trip_id(day_trip_id):
+                conn = psycopg2.connect(conn_str)
+                cur = conn.cursor()
+                cur.execute('DELETE FROM day_trip_table WHERE trip_locations_id = %s;' %(day_trip_id))
+                conn.commit()
+                conn.close()
+
             cur.execute("insert into day_trip_table (index, trip_locations_id, full_day, regular, county, state, details, event_type, event_ids) VALUES ( %s, '%s', %s, %s, '%s', '%s', '%s', '%s', '%s');" %( index, day_trip_id, full_day, regular, county, state, str(details).replace("'", "''"), event_type, event_ids))
             conn.commit()
             conn.close()

@@ -4,7 +4,7 @@ import ast
 import numpy as np
 import simplejson
 import urllib
-# from helpers import *
+from helpers import *
 conn_str = "dbname='travel_with_friends' user='zoesh' host='localhost'"
 
 def ajax_available_events(county, state):
@@ -443,3 +443,21 @@ def db_remove_outside_extra_events(event_ids, driving_time_list,walking_time_lis
         return db_remove_extra_events(update_event_ids, update_driving_time_list, update_walking_time_list)
     else:
         return event_ids, driving_time_list, walking_time_list, time_spent
+
+
+def check_outside_route_id(outside_route_id, debug = True):
+    '''
+    Check day trip id exist or not.  
+    '''
+    conn = psycopg2.connect(conn_str)  
+    cur = conn.cursor()  
+    cur.execute("select details from route_trip_table where outside_route_id = '%s'" %(outside_route_id)) 
+    a = cur.fetchone()[0]
+    conn.close()
+    if bool(a):
+        if not debug: 
+            return a
+        else:
+            return True
+    else:
+        return False
