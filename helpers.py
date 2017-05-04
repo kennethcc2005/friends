@@ -318,18 +318,18 @@ def find_google_result(orig_coords, dest_coords, orig_name, dest_name, i):
                                     format(orig_coords.replace(' ',''),dest_coords.replace(' ',''),api_key[i])
     driving_result= simplejson.load(urllib.urlopen(google_driving_url))
     walking_result= simplejson.load(urllib.urlopen(google_walking_url))
-    if (driving_result['rows'][0]['elements'][0]['status'] == 'OVER_QUERY_LIMIT') or (walking_result['rows'][0]['elements'][0]['status'] == 'OVER_QUERY_LIMIT'):
+    if (driving_result['status'] == 'OVER_QUERY_LIMIT') or (walking_result['status'] == 'OVER_QUERY_LIMIT'):
         return False
 
-
+    # print google_driving_url
     if driving_result['rows'][0]['elements'][0]['status'] == 'ZERO_RESULTS':
         google_driving_url = "https://maps.googleapis.com/maps/api/distancematrix/json?origins={0}&destinations={1}&mode=driving&language=en-EN&sensor=false&key={2}".\
-                            format(orig_name.replace(' ','+').replace('-','+'),dest_name.replace(' ','+').replace('-','+'),api_key[api_i])
+                            format(orig_name.replace(' ','+').replace('-','+'),dest_name.replace(' ','+').replace('-','+'),api_key[i])
         driving_result= simplejson.load(urllib.urlopen(google_driving_url))
 
     if walking_result['rows'][0]['elements'][0]['status'] == 'ZERO_RESULTS':
         google_walking_url = "https://maps.googleapis.com/maps/api/distancematrix/json?origins={0}&destinations={1}&mode=walking&language=en-EN&sensor=false&key={2}".\
-                            format(orig_name.replace(' ','+').replace('-','+'),dest_name.replace(' ','+').replace('-','+'),api_key[api_i])
+                            format(orig_name.replace(' ','+').replace('-','+'),dest_name.replace(' ','+').replace('-','+'),api_key[i])
         walking_result= simplejson.load(urllib.urlopen(google_walking_url))
     google_driving_url = google_driving_url.replace("'s","%27")
     google_walking_url = google_walking_url.replace("'s","%27")
