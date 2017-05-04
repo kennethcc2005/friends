@@ -1,7 +1,7 @@
 import pandas as pd
 import psycopg2
 from sqlalchemy import create_engine
-
+import json
 with open('api_key_list.config') as key_file:
     api_key_list = json.load(key_file)
 conn_str = api_key_list["conn_str"]
