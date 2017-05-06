@@ -90,14 +90,14 @@ def outside_trip_poi(origin_city, origin_state, target_direction = 'N', n_days =
             outside_trip_details.extend(details)
             event_id_lst.extend(event_ids)
 
-        username = "zoesh"
+        username_id = 1
         conn = psycopg2.connect(conn_str)
         cur = conn.cursor()
         cur.execute('SELECT MAX(index) from outside_trip_table;')
         new_index = cur.fetchone()[0] +1
-        cur.execute("INSERT into outside_trip_table(index, username, outside_trip_id, outside_route_ids, event_id_lst, origin_city, origin_state, target_direction, n_routes, regular, full_day, details) \
+        cur.execute("INSERT into outside_trip_table(index, username_id, outside_trip_id, outside_route_ids, event_id_lst, origin_city, origin_state, target_direction, n_routes, regular, full_day, details) \
                      VALUES (%s,'%s', '%s', '%s','%s', '%s', '%s', '%s', %s,%s,%s,'%s');" \
-                     %(new_index, username, outside_trip_id, str(outside_route_ids).replace("'","''"), str(event_id_lst), origin_city, origin_state, target_direction, n_routes, regular, full_day, str(outside_trip_details).replace("'","''")))
+                     %(new_index, username_id, outside_trip_id, str(outside_route_ids).replace("'","''"), str(event_id_lst), origin_city, origin_state, target_direction, n_routes, regular, full_day, str(outside_trip_details).replace("'","''")))
         conn.commit()
         conn.close()
         print "finish update %s, %s, direction %s into database" %(origin_state, origin_city, target_direction)
