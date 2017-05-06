@@ -1,8 +1,12 @@
 import psycopg2
+import json
 import city_trip as trip
 
+with open('api_key_list.config') as key_file:
+    api_key_list = json.load(key_file)
+conn_str = api_key_list["conn_str"]
 
-conn_str = "dbname='travel_with_friends' user='Gon' host='localhost'"
+# conn_str = "dbname='travel_with_friends' user='Gon' host='localhost'"
 
 conn = psycopg2.connect(conn_str)
 cur = conn.cursor()
@@ -35,7 +39,7 @@ for x in range(len(c)):
     for day in n_days:
         error = trip.get_fulltrip_data(state, city, int(day))
         Not_data_for_county.append(error)
-
-with open("missing_county_info.txt", 'w') as f:
-	for error in Not_data_for_county:
-		f.write("%s\n"%error)
+print "finish all city and state"
+# with open("missing_county_info.txt", 'w') as f:
+# 	for error in Not_data_for_county:
+# 		f.write("%s\n"%error)

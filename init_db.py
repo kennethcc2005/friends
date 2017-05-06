@@ -1,12 +1,17 @@
 import pandas as pd
 import psycopg2
 import os
+import json
 from sqlalchemy import create_engine
 
 path = os.getcwd()
-user = "Gon"
-conn_str = "dbname='travel_with_friends' user={} host='localhost'".format(user)
-engine = create_engine('postgresql://{}@localhost:5432/travel_with_friends'.format(user))
+with open('api_key_list.config') as key_file:
+    api_key_list = json.load(key_file)
+conn_str = api_key_list["conn_str"]
+engine = api_key_list["engine"]
+# user = "Gon"
+# conn_str = "dbname='travel_with_friends' user={} host='localhost'".format(user)
+# engine = create_engine('postgresql://{}@localhost:5432/travel_with_friends'.format(user))
 df_counties_path = path+'/us_cities_states_counties.csv'
 df_city_coords_path = path+'/all_cities_coords.csv'
 poi_detail_path = path+'/poi_detail_table_final_v1.csv'
@@ -59,7 +64,7 @@ def init_db_tables():
     cur.execute("ALTER TABLE day_trip_table ADD PRIMARY KEY (index);")
     cur.execute("ALTER TABLE google_travel_time_table ADD PRIMARY KEY (id_field);")
     cur.execute("ALTER TABLE county_table ADD PRIMARY KEY (index);")
-    cur.execute("ALTER TABLE full_trip_table ADD CONSTRAINT fk_full_trip_user_name FOREIGN KEY (username) REFERENCES auth_user (username);")
+    # cur.execute("ALTER TABLE full_trip_table ADD CONSTRAINT fk_full_trip_user_name FOREIGN KEY (username) REFERENCES auth_user (username);")
     conn.commit()
     conn.close()
     print "finish init database"

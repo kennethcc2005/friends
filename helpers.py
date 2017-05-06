@@ -149,6 +149,7 @@ def check_day_trip_id(day_trip_id):
     cur = conn.cursor()  
     cur.execute("select details from day_trip_table where trip_locations_id = '%s'" %(day_trip_id)) 
     a = cur.fetchone()
+    print a
     conn.close()
     if bool(a):
         return True
@@ -258,6 +259,8 @@ def db_google_driving_walking_time(event_ids, event_type):
             google_result = find_google_result(orig_coords, dest_coords, orig_name, dest_name, api_i)
             while google_result == False:
                 api_i+=1
+                if api_i >6:
+                    print "all api_key are used"
                 google_result = find_google_result(orig_coords, dest_coords, orig_name, dest_name, api_i)
             driving_result, walking_result, google_driving_url, google_walking_url = google_result
 

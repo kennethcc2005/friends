@@ -46,10 +46,10 @@ def get_fulltrip_data(state, city, n_days, full_day = True, regular = True, debu
             big_ = sorted_events(county_list_info, big_ix)
             med_ = sorted_events(county_list_info, med_ix)
             small_ = sorted_events(county_list_info, small_ix)
-            if len(big_)+len(med_)+len(small_)==0:
-                print "not more event for days " , day_trip_id
-                # return [day_trip_id, "not more event for days " ]
-                break 
+            # if len(big_)+len(med_)+len(small_)==0:
+            #     print "not more event for days " , day_trip_id
+            #     # return [day_trip_id, "not more event for days " ]
+            #     break 
             # print big_, med_, small_
             event_ids, event_type = create_event_id_list(big_, med_, small_)
             # print event_ids, event_type
@@ -74,9 +74,8 @@ def get_fulltrip_data(state, city, n_days, full_day = True, regular = True, debu
             if check_day_trip_id(day_trip_id):
                 conn = psycopg2.connect(conn_str)
                 cur = conn.cursor()
-                cur.execute('DELETE FROM day_trip_table WHERE trip_locations_id = %s;' %(day_trip_id))
+                cur.execute("DELETE FROM day_trip_table WHERE trip_locations_id = '%s';" %(day_trip_id))
                 conn.commit()
-                conn.close()
 
             cur.execute("insert into day_trip_table (index, trip_locations_id, full_day, regular, county, state, details, event_type, event_ids) VALUES ( %s, '%s', %s, %s, '%s', '%s', '%s', '%s', '%s');" %( index, day_trip_id, full_day, regular, county, state, str(details).replace("'", "''"), event_type, event_ids))
             conn.commit()
