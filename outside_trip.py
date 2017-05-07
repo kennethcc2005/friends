@@ -20,20 +20,21 @@ def outside_trip_poi(origin_city, origin_state, target_direction = 'N', n_days =
         if n_days == 1:
             furthest_len = 140
         #possible city coords, target city coord_lat, target city coord_long
-        city_id, coords, coord_lat, coord_long = travel_outside_coords(origin_city, origin_state)
+        # city_id, coords, coord_lat, coord_long = travel_outside_coords(origin_city, origin_state)
         #coords: city, lat, long
-        check_cities_info = []
-        for item in coords:
-            direction = direction_from_orgin(coord_long,  coord_lat, item[2], item[1])
-            if (target_direction == direction) and (geopy_dist((item[1], item[2]), (coord_lat, coord_long)) < furthest_len):
-                check_cities_info.append(item)
-        city_infos = []
-        for city, _, _ in check_cities_info:
-            county = None
-            #index, coord0, coord1, adjusted_normal_time_spent, poi_rank, rating
-            city_info = db_start_location(county, origin_state, city)
-            city_infos.extend(city_info)
-        city_infos = np.array(city_infos)
+        # check_cities_info = []
+        # for item in coords:
+        #     direction = direction_from_orgin(coord_long,  coord_lat, item[2], item[1])
+        #     if (target_direction == direction) and (geopy_dist((item[1], item[2]), (coord_lat, coord_long)) < furthest_len):
+        #         check_cities_info.append(item)
+        # city_infos = []
+        # for city, _, _ in check_cities_info:
+        #     county = None
+        #     #index, coord0, coord1, adjusted_normal_time_spent, poi_rank, rating
+        #     city_info = db_start_location(county, origin_state, city)
+        #     city_infos.extend(city_info)
+        city_infos = np.array(travel_outside_with_direction(current_city, current_state, target_direction, furthest_len, n_days=1))  
+        # city_infos = np.array(city_infos)
         poi_coords = city_infos[:,1:3]
         n_routes = sum(1 for t in np.array(city_infos)[:,3] if t >= 120)/10
         if (n_routes>1) and (city_infos.shape[0]>=10):

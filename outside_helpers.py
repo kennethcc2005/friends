@@ -189,7 +189,16 @@ def direction_from_orgin(start_coord_long,  start_coord_lat, target_coord_long, 
         return 'W'
     else:
         return 'N'
-    
+
+def check_direction(start_lat, start_long, outside_lat, outside_long, target_direction):
+    angle_dict={"E":range(45,135), "S":range(135,215), "W":range(215,305), "N":range(0,45) + range(305,360)}
+    angle = calculate_initial_compass_bearing((start_lat, start_long), (outside_lat, outside_long))
+
+    if int(angle) in angle_dict[target_direction]:
+        return True
+    else: 
+        return False
+
 def travel_outside_coords(current_city, current_state, direction=None, n_days=1):
     conn = psycopg2.connect(conn_str)   
     cur = conn.cursor() 
@@ -202,6 +211,22 @@ def travel_outside_coords(current_city, current_state, direction=None, n_days=1)
     conn.close()
     
     return id_, coords, coord_lat, coord_long
+
+def travel_outside_with_direction (current_city, current_state, target_direction, furthest_len, n_days=1):
+    poi_info = []
+    conn = psycopg2.connect(conn_str)   
+    cur = conn.cursor() 
+    #coord_long, coord_lat
+    cur.execute("select index, coord_lat, coord_long from all_cities_coords_table where city ='%s' and state = '%s';" %(current_city, current_state)) 
+    id_, start_lat, start_long = cur.fetchone()
+    
+    cur.execute("SELECT index, coord_lat, coord_long, adjusted_visit_length, ranking, review_score, num_reviews FROM poi_detail_table_v2 WHERE ST_Distance_Sphere(geom, ST_MakePoint(%s,%s)) <= %s * 1609.34;"%(start_long, start_lat,furthest_len)) 
+    item = cur.fetchall()
+    conn.close()
+    for coords in item:
+        if check_direction(start_lat, start_long, coords[1] ,coords[2], target_direction):
+            poi_info.append(coords)
+    return poi_info
 
 def check_outside_trip_id(outside_trip_id, debug):
     '''
