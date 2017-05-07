@@ -149,7 +149,6 @@ def check_day_trip_id(day_trip_id):
     cur = conn.cursor()  
     cur.execute("select details from day_trip_table where trip_locations_id = '%s'" %(day_trip_id)) 
     a = cur.fetchone()
-    print a
     conn.close()
     if bool(a):
         return True

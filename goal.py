@@ -6,6 +6,9 @@ def thing to do():
 	3. Seperated auth for different cases get/post
 	4. Token needs to expire...now last forever!
 	"""
+
+
+	
 	print """
 	outside :
 	1.	one way trip/ round trip
@@ -27,11 +30,21 @@ def thing to do():
 	5.	check full trip for all 5 days
 	6.	take out poi from poi_table where tag = ex. tour, ....
 	7.	add state == 'Puerto Rico', Virgin Islands' into our database poi_table
+	"""
+
+	print """
+	create your own trip
+	1.	user insert location that they want to go
+	2.	base on how much time events need, if time less, find events around location/ if time alot, draw circle using the location and find events inside.
+	3.	publish your trip, and open for people to join
+	4.	
 
 
+	"""
 
 
-	problem found:
+	print """
+	problem found: 
 		(fixed) id_ = str(v) + '0000'+str(event_ids[i+1]) in db_google_driving_walking_time, str(v)&event_ids[i+1] is float, id looks weird. ex. 234.000009242.0
 		location dont have poi in our database, check missing_county_info.txt
 		national park's  county may have None, most of it. 
