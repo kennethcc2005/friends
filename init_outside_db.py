@@ -39,7 +39,7 @@ def init_outside_db_tables():
     cur.execute("ALTER TABLE outside_trip_table ADD PRIMARY KEY (index);")
     cur.execute("ALTER TABLE outside_route_table ADD PRIMARY KEY (index);")
     cur.execute("ALTER TABLE google_city_to_poi_table ADD PRIMARY KEY (index);")
-    cur.execute("ALTER TABLE outside_trip_table ADD CONSTRAINT fk_outside_trip_user_name FOREIGN KEY (username_id) REFERENCES auth_user (id);")
+    # cur.execute("ALTER TABLE outside_trip_table ADD CONSTRAINT fk_outside_trip_user_name FOREIGN KEY (username_id) REFERENCES auth_user (id);")
     conn.commit()
     conn.close()
 if __name__ == '__main__':
