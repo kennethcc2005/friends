@@ -23,7 +23,10 @@ from rest_framework.permissions import AllowAny
 from django.views.decorators.csrf import csrf_exempt
 '''
 Get Token:
-http post http://127.0.0.1:8000/account/api-token-auth/ username=test password=test1234
+http post http://127.0.0.1:8000/account/get_auth_token/ username=test password=test1234
+
+Get outside Trip:
+http get 'http://127.0.0.1:8000/outside_trip_search/?city=San_Diego&state=California&direction=N&n_days=1'
 '''
 @api_view(['GET'])
 def api_root(request, format=None):

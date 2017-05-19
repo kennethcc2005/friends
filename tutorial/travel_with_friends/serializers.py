@@ -12,7 +12,7 @@ class FullTripSearchSerializer(serializers.Serializer):
 class OutsideTripSearchSerializer(serializers.Serializer):
     city = serializers.CharField()
     state = serializers.CharField()
-    n_routes = serializers.CharField()
+    n_days = serializers.CharField()
     direction = serializers.CharField()
 
 # class UserSerializer(serializers.ModelSerializer):

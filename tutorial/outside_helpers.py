@@ -7,6 +7,7 @@ import urllib
 from helpers import *
 with open('api_key_list.config') as key_file:
     api_key_list = json.load(key_file)
+api_key = api_key_list["distance_api_key_list"]
 conn_str = api_key_list["conn_str"]
 def ajax_available_events(county, state):
     county=county.upper()
@@ -189,7 +190,16 @@ def direction_from_orgin(start_coord_long,  start_coord_lat, target_coord_long, 
         return 'W'
     else:
         return 'N'
-    
+
+def check_direction(start_lat, start_long, outside_lat, outside_long, target_direction):
+    angle_dict={"E":range(45,135), "S":range(135,215), "W":range(215,305), "N":range(0,45) + range(305,360)}
+    angle = calculate_initial_compass_bearing((start_lat, start_long), (outside_lat, outside_long))
+
+    if int(angle) in angle_dict[target_direction]:
+        return True
+    else: 
+        return False
+
 def travel_outside_coords(current_city, current_state, direction=None, n_days=1):
     conn = psycopg2.connect(conn_str)   
     cur = conn.cursor() 
@@ -203,6 +213,23 @@ def travel_outside_coords(current_city, current_state, direction=None, n_days=1)
     
     return id_, coords, coord_lat, coord_long
 
+def travel_outside_with_direction (origin_city,origin_state, target_direction, furthest_len, n_days=1):
+    poi_info = []
+    conn = psycopg2.connect(conn_str)   
+    cur = conn.cursor() 
+    #coord_long, coord_lat
+    cur.execute("select index, coord_lat, coord_long from all_cities_coords_table where city ='%s' and state = '%s';" %(origin_city,origin_state)) 
+    id_, start_lat, start_long = cur.fetchone()
+
+    cur.execute("SELECT index, coord_lat, coord_long, adjusted_visit_length, ranking, review_score, num_reviews FROM poi_detail_table_v2 WHERE city != '%s' and ST_Distance_Sphere(geom, ST_MakePoint(%s,%s)) <= %s * 1609.34;"%(origin_city, start_long, start_lat,furthest_len)) 
+    item = cur.fetchall()
+    conn.close()
+    for coords in item:
+        if check_direction(start_lat, start_long, coords[1] ,coords[2], target_direction):
+            poi_info.append(coords)
+    return id_, start_lat, start_long, np.array(poi_info)
+    
+
 def check_outside_trip_id(outside_trip_id, debug):
     '''
     Check outside trip id exist or not.  
@@ -211,7 +238,7 @@ def check_outside_trip_id(outside_trip_id, debug):
     cur = conn.cursor()  
     cur.execute("select outside_trip_id from outside_trip_table where outside_trip_id = '%s'" %(outside_trip_id)) 
     a = cur.fetchone()
-    print 'outside stuff id', a, bool(a)
+    # print 'outside stuff id', a, bool(a)
     conn.close()
     if bool(a):
         if not debug: 
@@ -251,19 +278,19 @@ def db_outside_google_driving_walking_time(city_id, start_coord_lat, start_coord
         orig_coords = str(start_coord_lat)+','+str(start_coord_long)
         dest_coords = str(dest_coord_lat)+','+str(dest_coord_long)
         google_driving_url = "https://maps.googleapis.com/maps/api/distancematrix/json?origins={0}&destinations={1}&mode=driving&language=en-EN&sensor=false&key={2}".\
-                                format(orig_coords.replace(' ',''),dest_coords.replace(' ',''),my_key)
+                                format(orig_coords.replace(' ',''),dest_coords.replace(' ',''),api_key[0])
         google_walking_url = "https://maps.googleapis.com/maps/api/distancematrix/json?origins={0}&destinations={1}&mode=walking&language=en-EN&sensor=false&key={2}".\
-                                format(orig_coords.replace(' ',''),dest_coords.replace(' ',''),my_key)
+                                format(orig_coords.replace(' ',''),dest_coords.replace(' ',''),api_key[0])
         driving_result= simplejson.load(urllib.urlopen(google_driving_url))
         walking_result= simplejson.load(urllib.urlopen(google_walking_url))
         orig_name = origin_city.upper().replace(' ','+').replace('-','+') + '+' + origin_state.upper().replace(' ','+').replace('-','+')
         if driving_result['rows'][0]['elements'][0]['status'] == 'ZERO_RESULTS':
             google_driving_url = "https://maps.googleapis.com/maps/api/distancematrix/json?origins={0}&destinations={1}&mode=driving&language=en-EN&sensor=false&key={2}".\
-                                format(orig_name,dest_name.replace(' ','+').replace('-','+'),my_key)
+                                format(orig_name,dest_name.replace(' ','+').replace('-','+'),api_key[0])
             driving_result= simplejson.load(urllib.urlopen(google_driving_url))
         if walking_result['rows'][0]['elements'][0]['status'] == 'ZERO_RESULTS':
             google_walking_url = "https://maps.googleapis.com/maps/api/distancematrix/json?origins={0}&destinations={1}&mode=walking&language=en-EN&sensor=false&key={2}".\
-                                    format(orig_name,dest_name.replace(' ','+').replace('-','+'),my_key)
+                                    format(orig_name,dest_name.replace(' ','+').replace('-','+'),api_key[0])
             walking_result= simplejson.load(urllib.urlopen(google_walking_url))
         if (driving_result['rows'][0]['elements'][0]['status'] == 'NOT_FOUND') and (walking_result['rows'][0]['elements'][0]['status'] == 'NOT_FOUND'):
             new_event_ids = list(event_ids)
@@ -319,20 +346,20 @@ def db_outside_google_driving_walking_time(city_id, start_coord_lat, start_coord
             orig_coords = str(orig_coord_lat)+','+str(orig_coord_long)
             dest_coords = str(dest_coord_lat)+','+str(dest_coord_long)
             google_driving_url = "https://maps.googleapis.com/maps/api/distancematrix/json?origins={0}&destinations={1}&mode=driving&language=en-EN&sensor=false&key={2}".\
-                                    format(orig_coords.replace(' ',''),dest_coords.replace(' ',''),my_key)
+                                    format(orig_coords.replace(' ',''),dest_coords.replace(' ',''),api_key[0])
             google_walking_url = "https://maps.googleapis.com/maps/api/distancematrix/json?origins={0}&destinations={1}&mode=walking&language=en-EN&sensor=false&key={2}".\
-                                    format(orig_coords.replace(' ',''),dest_coords.replace(' ',''),my_key)
+                                    format(orig_coords.replace(' ',''),dest_coords.replace(' ',''),api_key[0])
                 
             driving_result= simplejson.load(urllib.urlopen(google_driving_url))
             walking_result= simplejson.load(urllib.urlopen(google_walking_url))
             if driving_result['rows'][0]['elements'][0]['status'] == 'ZERO_RESULTS':
                 google_driving_url = "https://maps.googleapis.com/maps/api/distancematrix/json?origins={0}&destinations={1}&mode=driving&language=en-EN&sensor=false&key={2}".\
-                                    format(orig_name.replace(' ','+').replace('-','+'),dest_name.replace(' ','+').replace('-','+'),my_key)
+                                    format(orig_name.replace(' ','+').replace('-','+'),dest_name.replace(' ','+').replace('-','+'),api_key[0])
                 driving_result= simplejson.load(urllib.urlopen(google_driving_url))
                 
             if walking_result['rows'][0]['elements'][0]['status'] == 'ZERO_RESULTS':
                 google_walking_url = "https://maps.googleapis.com/maps/api/distancematrix/json?origins={0}&destinations={1}&mode=walking&language=en-EN&sensor=false&key={2}".\
-                                        format(orig_name.replace(' ','+').replace('-','+'),dest_name.replace(' ','+').replace('-','+'),my_key)
+                                        format(orig_name.replace(' ','+').replace('-','+'),dest_name.replace(' ','+').replace('-','+'),api_key[0])
                 walking_result= simplejson.load(urllib.urlopen(google_walking_url))
             if (driving_result['rows'][0]['elements'][0]['status'] == 'NOT_FOUND') and (walking_result['rows'][0]['elements'][0]['status'] == 'NOT_FOUND'):
                 new_event_ids = list(event_ids)
@@ -441,7 +468,7 @@ def db_remove_outside_extra_events(event_ids, driving_time_list,walking_time_lis
         update_event_ids = event_ids[:-1]
         update_driving_time_list = driving_time_list[:-1]
         update_walking_time_list = walking_time_list[:-1]
-        return db_remove_extra_events(update_event_ids, update_driving_time_list, update_walking_time_list)
+        return db_remove_outside_extra_events(update_event_ids, update_driving_time_list, update_walking_time_list)
     else:
         return event_ids, driving_time_list, walking_time_list, time_spent
 
@@ -452,13 +479,72 @@ def check_outside_route_id(outside_route_id, debug = True):
     '''
     conn = psycopg2.connect(conn_str)  
     cur = conn.cursor()  
-    cur.execute("select details from route_trip_table where outside_route_id = '%s'" %(outside_route_id)) 
-    a = cur.fetchone()[0]
+    cur.execute("select details from outside_route_table where outside_route_id = '%s'" %(outside_route_id)) 
+    a = cur.fetchone()
     conn.close()
     if bool(a):
         if not debug: 
-            return a
+            return a[0]
         else:
             return True
     else:
         return False
+
+def sorted_outside_events(info,ix):
+    '''
+    find the event_id, ranking and review_score, num_reviews columns
+    sorted base on ranking then review_score, num_reviews
+    
+    return sorted list 
+    '''
+    event_ = info[ix][:,[0,4,5,6]]
+    return np.array(sorted(event_, key=lambda x: (-x[3], x[1], -x[2],)))
+    #num_reviews, ranking, review_score
+
+def create_outside_event_id_list(big_,medium_,small_):
+    # print big_,medium_,small_
+    event_type = ''
+    if big_.shape[0] >= 1:
+        if (medium_.shape[0] < 2) or (big_[0,1] >= medium_[0,1]):
+            if small_.shape[0] >= 6:
+                event_ids = list(np.concatenate((big_[:1,0], small_[0:6,0]),axis=0))  
+            elif small_.shape[0]>0:
+                event_ids = list(np.concatenate((big_[:1,0], small_[:,0]),axis=0)) 
+            else:
+                event_ids = list(np.array(sorted(big_[0:,:], key=lambda x: (-x[1], x[2])))[:,0])
+            event_type = 'big'
+        else:
+            if small_.shape[0] >= 8:
+                event_ids = list(np.concatenate((medium_[0:2,0], small_[0:8,0]),axis=0))
+            elif small_.shape[0]>0:
+                event_ids = list(np.concatenate((medium_[0:2,0], small_[:,0]),axis=0))
+            else:
+                event_ids = list(np.array(sorted(medium_[0:,:], key=lambda x: (-x[1], x[2])))[:,0])
+            event_type = 'med'
+    elif medium_.shape[0] >= 2:
+        if small_.shape[0] >= 8:
+            event_ids = list(np.concatenate((medium_[0:2,0], small_[0:8,0]),axis=0))
+        elif small_.shape[0]>0:
+            event_ids = list(np.concatenate((medium_[0:2,0], small_[:,0]),axis=0))
+        else:
+            event_ids = list(np.array(sorted(medium_[0:,:], key=lambda x: (-x[1], x[2])))[:,0])
+        event_type = 'med'
+    else:
+        if small_.shape[0] >= 10:
+            if medium_.shape[0]==0:
+                event_ids = list(np.array(sorted(small_[0:10,:], key=lambda x: (-x[1], x[2])))[:,0])
+            else:
+                event_ids = list(np.array(sorted(np.vstack((medium_[:1,:], small_[0:10,:])), key=lambda x: (-x[1], x[2])))[:,0])
+        elif small_.shape[0] > 0:
+            if medium_.shape[0]==0:
+                event_ids = list(np.array(sorted(small_[0:,:], key=lambda x: (-x[1], x[2])))[:,0])
+            else:
+                event_ids = list(np.array(sorted(np.vstack((medium_, small_)), key=lambda x: (-x[1], x[2])))[:,0])
+
+        else:
+            event_ids = list(np.array(sorted(medium_[0:,:], key=lambda x: (x[1],-x[2])))[:,0])
+        event_type = 'small'
+    # else:
+
+    return event_ids, event_type
+

@@ -46,10 +46,10 @@ def get_fulltrip_data(state, city, n_days, full_day = True, regular = True, debu
             big_ = sorted_events(county_list_info, big_ix)
             med_ = sorted_events(county_list_info, med_ix)
             small_ = sorted_events(county_list_info, small_ix)
-            if len(big_)+len(med_)+len(small_)==0:
-                print "not more event for days " , day_trip_id
-                # return [day_trip_id, "not more event for days " ]
-                break 
+            # if len(big_)+len(med_)+len(small_)==0:
+            #     print "not more event for days " , day_trip_id
+            #     # return [day_trip_id, "not more event for days " ]
+            #     break 
             # print big_, med_, small_
             event_ids, event_type = create_event_id_list(big_, med_, small_)
             # print event_ids, event_type
@@ -70,11 +70,13 @@ def get_fulltrip_data(state, city, n_days, full_day = True, regular = True, debu
             max_index = cur.fetchone()[0]
             index = max_index+1
 
-            conn = psycopg2.connect(conn_str)
-            cur = conn.cursor()
             #if exisitng day trip id..remove those...
             if check_day_trip_id(day_trip_id):
+                conn = psycopg2.connect(conn_str)
+                cur = conn.cursor()
                 cur.execute("DELETE FROM day_trip_table WHERE trip_locations_id = '%s';" %(day_trip_id))
+                conn.commit()
+
             cur.execute("insert into day_trip_table (index, trip_locations_id, full_day, regular, county, state, details, event_type, event_ids) VALUES ( %s, '%s', %s, %s, '%s', '%s', '%s', '%s', '%s');" %( index, day_trip_id, full_day, regular, county, state, str(details).replace("'", "''"), event_type, event_ids))
             conn.commit()
             conn.close()
@@ -82,22 +84,22 @@ def get_fulltrip_data(state, city, n_days, full_day = True, regular = True, debu
             full_trip_details.extend(details)
 
         # full_trip_id = '-'.join([str(state.upper()), str(county.upper().replace(' ','-')),str(int(regular)), str(n_days)])
-        username_id = 1
+        username = "Zoesh"
         conn = psycopg2.connect(conn_str)
         cur = conn.cursor()
         cur.execute("select max(index) from full_trip_table;")
         full_trip_index = cur.fetchone()[0] + 1
-        cur.execute("insert into full_trip_table(index, username_id, full_trip_id,trip_location_ids, regular, county, state, details, n_days) VALUES (%s, '%s', '%s', '%s', %s, '%s', '%s', '%s', %s);" %(full_trip_index, username_id, full_trip_id, str(trip_location_ids).replace("'","''"), regular, county, state, str(full_trip_details).replace("'","''"), n_days))
+        cur.execute("insert into full_trip_table(index, username, full_trip_id,trip_location_ids, regular, county, state, details, n_days) VALUES (%s, '%s', '%s', '%s', %s, '%s', '%s', '%s', %s);" %(full_trip_index, username, full_trip_id, str(trip_location_ids).replace("'","''"), regular, county, state, str(full_trip_details).replace("'","''"), n_days))
         conn.commit()
         conn.close()
         print "finish update %s, %s into database" %(state, county)
-        return full_trip_id, full_trip_details
+        # return full_trip_id, full_trip_details
     else:
         print "%s, %s already in database" %(state, county) 
-        conn = psycopg2.connect(conn_str)
-        cur = conn.cursor()
-        cur.execute("select details from full_trip_table where full_trip_id = '%s';" %(full_trip_id)) 
-        details = cur.fetchone()[0]        
-        conn.close()
-        full_trip_details = ast.literal_eval(details)
-        return full_trip_id, full_trip_details
+        # conn = psycopg2.connect(conn_str)
+        # cur = conn.cursor()
+        # cur.execute("select details from full_trip_table where full_trip_id = '%s';" %(full_trip_id)) 
+        # details = cur.fetchone()[0]        
+        # conn.close()
+        # full_trip_details = ast.literal_eval(details)
+        # return full_trip_id, full_trip_details

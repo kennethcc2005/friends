@@ -21,7 +21,7 @@ urlpatterns = [
     # url(r'^login/$', local_views.get_auth_token, name='login'),
     # url(r'^logout/$', local_views.logout_user, name='logout'),
     # url(r'^auth/$', local_views.login_form, name='login_form'),
-    url(r'^account/api-token-auth/$', rest_framework_views.obtain_auth_token, name='get_auth_token'),
+    url(r'^account/get_auth_token/$', rest_framework_views.obtain_auth_token, name='get_auth_token'),
     url(r'^account/register', views.create_auth, name='register_user'),
     # url(r'^api/', include(router.urls)),
     # url(r'^users/create_user', views.CreateUserView),

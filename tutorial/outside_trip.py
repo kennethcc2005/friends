@@ -16,24 +16,38 @@ def outside_trip_poi(origin_city, origin_state, target_direction = 'N', n_days =
     outside_trip_id = '-'.join([str(origin_state.upper().replace(' ','-')), str(origin_city.upper().replace(' ','-')), \
                         target_direction,str(int(regular)), str(n_days)])
     if not check_outside_trip_id(outside_trip_id, debug):
-        furthest_len = 140
+        furthest_len = 100
         if n_days == 1:
-            furthest_len = 140
+            furthest_len = 100
         #possible city coords, target city coord_lat, target city coord_long
-        city_id, coords, coord_lat, coord_long = travel_outside_coords(origin_city, origin_state)
+        # city_id, coords, coord_lat, coord_long = travel_outside_coords(origin_city, origin_state)
         #coords: city, lat, long
-        check_cities_info = []
-        for item in coords:
-            direction = direction_from_orgin(coord_long,  coord_lat, item[2], item[1])
-            if (target_direction == direction) and (geopy_dist((item[1], item[2]), (coord_lat, coord_long)) < furthest_len):
-                check_cities_info.append(item)
-        city_infos = []
-        for city, _, _ in check_cities_info:
-            county = None
-            #index, coord0, coord1, adjusted_normal_time_spent, poi_rank, rating
-            city_info = db_start_location(county, origin_state, city)
-            city_infos.extend(city_info)
-        city_infos = np.array(city_infos)
+        # check_cities_info = []
+        # for item in coords:
+        #     direction = direction_from_orgin(coord_long,  coord_lat, item[2], item[1])
+        #     if (target_direction == direction) and (geopy_dist((item[1], item[2]), (coord_lat, coord_long)) < furthest_len):
+        #         check_cities_info.append(item)
+        # city_infos = []
+        # for city, _, _ in check_cities_info:
+        #     county = None
+        #     #index, coord0, coord1, adjusted_normal_time_spent, poi_rank, rating
+        #     city_info = db_start_location(county, origin_state, city)
+        #     city_infos.extend(city_info)
+        city_id, coord_lat, coord_long, city_infos = travel_outside_with_direction(origin_city, origin_state, target_direction, furthest_len, n_days=1)
+        if len(city_infos)<=0:
+            username_id = 1
+            conn = psycopg2.connect(conn_str)
+            cur = conn.cursor()
+            cur.execute('SELECT MAX(index) from outside_trip_table;')
+            new_index = cur.fetchone()[0] +1
+            cur.execute("INSERT into outside_trip_table(index, username_id, outside_trip_id, outside_route_ids, event_id_lst, origin_city, origin_state, target_direction, n_routes, regular, full_day, details) \
+                         VALUES (%s,'%s', '%s', '%s','%s', '%s', '%s', '%s', %s,%s,%s,'%s');" \
+                         %(new_index, username_id, outside_trip_id, '[]', '[]', origin_city, origin_state, target_direction, 0, regular, full_day, '[]'))
+            conn.commit()
+            conn.close()
+            print "finish update None for %s, %s, direction %s into database" %(origin_state, origin_city, target_direction)
+            return None
+        # city_infos = np.array(city_infos)
         poi_coords = city_infos[:,1:3]
         n_routes = sum(1 for t in np.array(city_infos)[:,3] if t >= 120)/10
         if (n_routes>1) and (city_infos.shape[0]>=10):
@@ -59,11 +73,11 @@ def outside_trip_poi(origin_city, origin_state, target_direction = 'N', n_days =
                         med_ix.append(ix)
                     else:
                         small_ix.append(ix)
-            big_ = sorted_events(city_infos, big_ix)
-            med_ = sorted_events(city_infos, med_ix)
-            small_ = sorted_events(city_infos, small_ix)
+            big_ = sorted_outside_events(city_infos, big_ix)
+            med_ = sorted_outside_events(city_infos, med_ix)
+            small_ = sorted_outside_events(city_infos, small_ix)
             # need to update!!!!!!!!
-            event_ids, event_type = create_event_id_list(big_, med_, small_)
+            event_ids, event_type = create_outside_event_id_list(big_, med_, small_)
             event_ids, event_type = db_outside_event_cloest_distance(coord_lat, coord_long, event_ids = event_ids, event_type = event_type)
             event_ids, google_ids, name_list, driving_time_list, walking_time_list =db_outside_google_driving_walking_time(city_id, coord_lat,coord_long, event_ids, event_type, origin_city = origin_city, origin_state = origin_state)
             #why bug????
@@ -112,3 +126,14 @@ def outside_trip_poi(origin_city, origin_state, target_direction = 'N', n_days =
         conn.close()
         return outside_trip_id, details
 
+if __name__ == '__main__':
+    import time
+    start_t = time.time()
+    direct = ["E","S","W","N"]
+    origin_city = 'San Francisco'
+    origin_state = 'California'
+    print origin_city, origin_state
+    for target_direction in direct:
+        outside_trip_poi(origin_city,origin_state, target_direction)
+
+    print time.time()-start_t
