@@ -59,7 +59,7 @@ def outside_trip_poi(origin_city, origin_state, target_direction = 'N', n_days =
         route_labels = kmeans.labels_
         # print n_routes, len(route_labels), city_infos.shape
         # print route_labels
-        outside_route_ids, outside_trip_details,event_id_lst =[],[],[]
+        outside_route_ids, outside_trip_details, details_theme, event_id_lst =[],[],[],[]
         for i in range(n_routes):
             current_events, big_ix, med_ix, small_ix = [], [],[], []
             for ix, label in enumerate(route_labels):
@@ -91,18 +91,35 @@ def outside_trip_poi(origin_city, origin_state, target_direction = 'N', n_days =
                 conn.commit()
                 conn.close()
             details = db_outside_route_trip_details(event_ids,i)
+
+            route_theme = assign_theme(details)
+            info = [outside_route_id, full_day, regular, origin_city, origin_state, target_direction, str(details).replace("'","''"), event_type, str(event_ids) , i, route_theme[0]]
+            route_theme.extend(info)
+            
+            details_theme.append(route_theme)
+
+            outside_route_ids.append(outside_route_id)
+            outside_trip_details.extend(details)
+            event_id_lst.extend(event_ids)
+        info_to_psql = clean_details(details_theme)
+        for info in info_to_psql:
+            outside_route_id, full_day, regular, origin_city, origin_state, target_direction, info_details, event_type, event_ids , i, route_theme = info 
+            # print info_details
+            # info_details = str(info_details).replace("''","'")
+            # print info_details
             conn = psycopg2.connect(conn_str)
             cur = conn.cursor()
             cur.execute('select max(index) from outside_route_table;')
             new_index = cur.fetchone()[0] + 1
-            cur.execute("insert into outside_route_table (index, outside_route_id, full_day, regular, origin_city, origin_state, target_direction, details, event_type, event_ids, route_num) \
-                        VALUES (%s, '%s', %s, %s, '%s', '%s', '%s', '%s', '%s', '%s', %s);" \
-                        %(new_index, outside_route_id, full_day, regular, origin_city, origin_state, target_direction, str(details).replace("'","''"), event_type, str(event_ids) , i))
+            cur.execute("insert into outside_route_table (index, outside_route_id, full_day, regular, origin_city, origin_state, target_direction, details, event_type, event_ids, route_num, route_theme) \
+                        VALUES (%s, '%s', %s, %s, '%s', '%s', '%s', '%s', '%s', '%s', %s, '%s');" \
+                        %(new_index, outside_route_id, full_day, regular, origin_city, origin_state, target_direction, info_details , event_type, str(event_ids) , i, route_theme))
             conn.commit()
             conn.close()
-            outside_route_ids.append(outside_route_id)
+
+
+
             outside_trip_details.extend(details)
-            event_id_lst.extend(event_ids)
 
         username_id = 1
         conn = psycopg2.connect(conn_str)

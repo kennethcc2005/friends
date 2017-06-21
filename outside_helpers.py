@@ -254,9 +254,9 @@ def db_outside_route_trip_details(event_ids, route_i):
     details = []
     #details dict includes: id, name,address, day
     for event_id in event_ids:
-        cur.execute("select index, name, address, coord_lat, coord_long from poi_detail_table_v2 where index = %s;" %(event_id))
+        cur.execute("select index, name, address, coord_lat, coord_long, poi_type, adjusted_visit_length, num_reviews, ranking, review_score from poi_detail_table_v2 where index = %s;" %(event_id))
         a = cur.fetchone()
-        details.append({'id': a[0],'name': a[1],'address': a[2], 'coord_lat': a[3], 'coord_long':a[4], 'route': route_i})
+        details.append({'id': a[0],'name': a[1],'address': a[2], 'coord_lat': a[3], 'coord_long':a[4], 'route': route_i, 'poi_type': a[5], 'adjusted_visit_length': a[6], 'num_reviews': a[7], 'ranking': a[8], 'review_score': a[9] })
     conn.close()
     return details
 
@@ -548,3 +548,92 @@ def create_outside_event_id_list(big_,medium_,small_):
 
     return event_ids, event_type
 
+def assign_theme(details):
+    theme_list_dict = {
+    "family" : ["Park","Zoo","Game"],
+    "lifestyle" : ["Nightlife","Shopping","Theater","Food","Spa","Casino","Show","ShoppingMall","Show"],
+    "nature" : ["StatePark","NationalWildlifeRefuge","NationalHistoricalPark","NationalForest","NationalMonument","NationalMemorial"],
+    "cultural" : ["Landmark", "Museum","OutdoorActivities","Library","Stadium"],
+    "theme_park" : ["ThemePark"],
+    "national_park" : ["NationalPark"],
+    "other_list" : ["Other","VisotorCenter","Transportation","Tour"]
+    }
+
+    assign_dict={"family" : 0,"lifestyle": 0,"nature": 0,"cultural": 0,"theme_park": 0,"national_park": 0,"other_list": 0}
+    
+    assign_dict2={"family" : 0,"lifestyle": 0,"nature": 0,"cultural": 0,"theme_park": 0,"national_park": 0,"other_list": 0}
+    
+    assign_dict3={"family" : -1,"lifestyle": -1,"nature": -1,"cultural": -1,"theme_park": -1,"national_park": -1,"other_list": -1}
+
+    assign_dict4={"family" : [],"lifestyle": [],"nature": [],"cultural": [],"theme_park": [],"national_park": [],"other_list": []}
+
+    #create a list for each poi
+    all_type=[]
+    for i in details:
+        all_type.append([i["poi_type"],i["adjusted_visit_length"], i["num_reviews"], i["ranking"], i["review_score"]])
+
+    for i in all_type:
+        for key, value in theme_list_dict.items():
+            if i[0] in value: #locate the theme 
+                assign_dict[key] += int(i[1]) #total time of theme
+                assign_dict2[key] += int(i[2]) #total # of review of theme
+                if assign_dict3[key] <0:
+                    assign_dict3[key] = int(i[3])
+                else:
+                    assign_dict3[key] = min(assign_dict3[key], int(i[3]))
+                # if key not in assign_dict4:
+                #     assign_dict4[key] = [float(i[4])]
+                # else:
+                #     assign_dict4[key].append(float(i[4]))
+                assign_dict4[key].append(float(i[4]))
+
+
+    assign_dict = sort_dict(assign_dict) #order descending 
+    
+    # theme1 = assign_dict[0][1]
+    # theme2 = assign_dict[1][1]
+    # num_reviews = assign_dict2
+    # ranking = assign_dict3
+    if assign_dict[0][0] == assign_dict[1][0]: #check if the total time is same 
+        if assign_dict2[assign_dict[0][1]] > assign_dict2[assign_dict[1][1]]:  #check number of review
+            return [assign_dict[0][1], assign_dict2[assign_dict[0][1]], assign_dict3[assign_dict[0][1]], avg_list(assign_dict4[assign_dict[0][1]])]
+        elif assign_dict2[assign_dict[0][1]] < assign_dict2[assign_dict[1][1]]:
+            return [assign_dict[1][1], assign_dict2[assign_dict[1][1]], assign_dict3[assign_dict[1][1]], avg_list(assign_dict4[assign_dict[1][1]])]
+        elif assign_dict3[assign_dict[0][1]] < assign_dict3[assign_dict[1][1]]: #check for ranking
+            return [assign_dict[0][1], assign_dict2[assign_dict[0][1]], assign_dict3[assign_dict[0][1]], avg_list(assign_dict4[assign_dict[0][1]])]
+        else:
+            return [assign_dict[1][1], assign_dict2[assign_dict[1][1]], assign_dict3[assign_dict[1][1]], avg_list(assign_dict4[assign_dict[1][1]])]
+
+    #return [theme, num of review, ranking, review_score, details]
+    return [assign_dict[0][1], assign_dict2[assign_dict[0][1]], assign_dict3[assign_dict[0][1]], avg_list(assign_dict4[assign_dict[0][1]])]
+
+def sort_dict(input_dict):
+    temp_dict = [(input_dict[key], key) for key in input_dict]
+    temp_dict.sort(reverse = True)
+    return temp_dict
+
+def avg_list(l):
+    #for finding avg of review socre
+    return sum(l)/len(l)
+
+def clean_details(details_theme):
+    details_array= np.array(details_theme)
+
+    final = []
+    used =[]
+    for count, i, in enumerate(details_array):
+        if (i[0] == "national_park") or (i[0] == "theme_park"):
+            final.append(i[4:])
+            used.append(count)
+    details_array = np.delete(details_array, used, axis = 0)
+    a= np.array(sorted(details_array, key=lambda x: (x[2].astype(np.int), -x[1].astype(np.float), x[3].astype(np.float))))
+
+    theme_select_dict={}
+    backup =[]
+    for count, i in enumerate(a):
+        if i[0] not in theme_select_dict:
+            theme_select_dict[i[0]] = 1
+            final.append(i[4:])
+        else:
+            backup.extend(i[4:])
+    return final

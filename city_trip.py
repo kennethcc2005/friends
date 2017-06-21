@@ -76,7 +76,7 @@ def get_fulltrip_data(state, city, n_days, full_day = True, regular = True, debu
                 cur = conn.cursor()
                 cur.execute("DELETE FROM day_trip_table WHERE trip_locations_id = '%s';" %(day_trip_id))
                 conn.commit()
-
+            event_ids = str(list(event_ids))
             cur.execute("insert into day_trip_table (index, trip_locations_id, full_day, regular, county, state, details, event_type, event_ids) VALUES ( %s, '%s', %s, %s, '%s', '%s', '%s', '%s', '%s');" %( index, day_trip_id, full_day, regular, county, state, str(details).replace("'", "''"), event_type, event_ids))
             conn.commit()
             conn.close()

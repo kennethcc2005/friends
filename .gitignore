@@ -88,6 +88,9 @@ ENV/
 # Rope project settings
 .ropeproject
 
+#img
+img_file/
+img_file2/
 
 #apikey
 *.config
