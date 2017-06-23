@@ -257,9 +257,9 @@ def db_outside_route_trip_details(event_ids, route_i):
     details = []
     #details dict includes: id, name,address, day
     for event_id in event_ids:
-        cur.execute("SELECT index, name, address, coord_lat, coord_long, poi_type, adjusted_visit_length, num_reviews, ranking, review_score, icon_url, check_full_address, city, state FROM poi_detail_table WHERE index = %s;" %(event_id))
+        cur.execute("SELECT index, name, address, coord_lat, coord_long, poi_type, adjusted_visit_length, num_reviews, ranking, review_score, icon_url, check_full_address, city, state , img_url FROM poi_detail_table WHERE index = %s;" %(event_id))
         a = cur.fetchone()
-        details.append({'id': a[0], 'name': a[1], 'address': a[2], 'coord_lat': a[3], 'coord_long':a[4], 'route': route_i, 'poi_type': a[5], 'adjusted_visit_length': a[6], 'num_reviews': a[7], 'ranking': a[8], 'review_score': a[9], 'icon_url': a[10], 'check_full_address': a[11], 'city': a[12], 'state': a[13]})
+        details.append({'id': a[0], 'name': a[1], 'address': a[2], 'coord_lat': a[3], 'coord_long':a[4], 'route': route_i, 'poi_type': a[5], 'adjusted_visit_length': a[6], 'num_reviews': a[7], 'ranking': a[8], 'review_score': a[9], 'icon_url': a[10], 'check_full_address': a[11], 'city': a[12], 'state': a[13], 'img_url': a[14]})
     conn.close()
     return details
 
