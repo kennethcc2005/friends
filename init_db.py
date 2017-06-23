@@ -67,12 +67,12 @@ def init_db_tables():
     cur.execute("ALTER TABLE day_trip_table ADD PRIMARY KEY (index);")
     cur.execute("ALTER TABLE google_travel_time_table ADD PRIMARY KEY (id_field);")
     cur.execute("ALTER TABLE county_table ADD PRIMARY KEY (index);")
-
-    # cur.execute("ALTER TABLE full_trip_table ADD CONSTRAINT fk_full_trip_user_name FOREIGN KEY (username_id) REFERENCES auth_user (id);")
+    cur.execute("ALTER TABLE full_trip_table ADD CONSTRAINT fk_full_trip_user_name FOREIGN KEY (username_id) REFERENCES auth_user (id);")
     
     #make geom
     cur.execute("ALTER TABLE poi_detail_table ADD COLUMN geom geometry(POINT,4326);")
     cur.execute("UPDATE poi_detail_table SET geom = ST_SetSRID(ST_MakePoint(coord_long,coord_lat),4326);")
+    
     # cur.execute("CREATE INDEX idx_poi_geom ON poi_detail_table USING GIST(geom);")
 
     #create better coord_table
