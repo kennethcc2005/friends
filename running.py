@@ -28,8 +28,8 @@ print last_stop
 conn.close()
 
 Not_data_for_county=[]
-# for x in range(last_stop-10,len(c)):
-for x in range(len(c)):
+for x in range(last_stop-10,len(c)):
+# for x in range(len(c)):
     state, city = c[x]
     # ('California', 'Newbury Park'), ('Alaska', 'Chignik Lake') have problem 
     # if (state == 'Puerto Rico') or (state == 'Virgin Islands'):
@@ -40,6 +40,6 @@ for x in range(len(c)):
         error = trip.get_fulltrip_data(state, city, int(day))
         Not_data_for_county.append(error)
 print "finish all city and state"
-# with open("missing_county_info.txt", 'w') as f:
-# 	for error in Not_data_for_county:
-# 		f.write("%s\n"%error)
+with open("missing_county_info.txt", 'w') as f:
+	for error in Not_data_for_county:
+		f.write("%s\n"%error)

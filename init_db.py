@@ -8,7 +8,7 @@ path = os.getcwd()
 with open('api_key_list.config') as key_file:
     api_key_list = json.load(key_file)
 conn_str = api_key_list["conn_str"]
-engine = api_key_list["engine"]
+engine = create_engine(api_key_list["engine"])
 # user = "Gon"
 # conn_str = "dbname='travel_with_friends' user={} host='localhost'".format(user)
 # engine = create_engine('postgresql://{}@localhost:5432/travel_with_friends'.format(user))
@@ -19,7 +19,7 @@ poi_detail_path = path+'/poi_detail_table_final_v1.csv'
 
 
 def init_db_tables():
-    full_trip_table = pd.DataFrame(columns =['username_id', 'full_trip_id', 'trip_location_ids', 'regular', 'county', 'state', 'details', 'n_days'])
+    full_trip_table = pd.DataFrame(columns =['username_id', 'full_trip_id', 'trip_location_ids', 'regular', 'county', 'state', 'details', 'n_days','visible'])
 
     day_trip_locations_table = pd.DataFrame(columns =['trip_locations_id','full_day', 'regular', 'county', 'state','details','event_type','event_ids'])
 
@@ -43,13 +43,13 @@ def init_db_tables():
        "['CALIFORNIA-SAN-DIEGO-1-3-0', 'CALIFORNIA-SAN-DIEGO-1-3-1', 'CALIFORNIA-SAN-DIEGO-1-3-2']",
        True, 'SAN DIEGO', 'California',
        '["{\'address\': \'15500 San Pasqual Valley Rd, Escondido, CA 92027, USA\', \'id\': 2259, \'day\': 0, \'name\': u\'San Diego Zoo Safari Park\'}", "{\'address\': \'Safari Walk, Escondido, CA 92027, USA\', \'id\': 2260, \'day\': 0, \'name\': u\'Meerkat\'}", "{\'address\': \'1999 Citracado Parkway, Escondido, CA 92029, USA\', \'id\': 3486, \'day\': 0, \'name\': u\'Stone\'}", "{\'address\': \'1999 Citracado Parkway, Escondido, CA 92029, USA\', \'id\': 3487, \'day\': 0, \'name\': u\'Stone Brewery\'}", "{\'address\': \'Mount Woodson Trail, Poway, CA 92064, USA\', \'id\': 4951, \'day\': 0, \'name\': u\'Lake Poway\'}", "{\'address\': \'17130 Mt Woodson Rd, Ramona, CA 92065, USA\', \'id\': 4953, \'day\': 0, \'name\': u\'Potato Chip Rock\'}", "{\'address\': \'17130 Mt Woodson Rd, Ramona, CA 92065, USA\', \'id\': 4952, \'day\': 0, \'name\': u\'Mt. Woodson\'}", "{\'address\': \'1 Legoland Dr, Carlsbad, CA 92008, USA\', \'id\': 2870, \'day\': 1, \'name\': u\'Legoland\'}", "{\'address\': \'5754-5780 Paseo Del Norte, Carlsbad, CA 92008, USA\', \'id\': 2871, \'day\': 1, \'name\': u\'Carlsbad Flower Fields\'}", "{\'address\': \'211-359 The Strand N, Oceanside, CA 92054, USA\', \'id\': 2089, \'day\': 1, \'name\': u\'Oceanside Pier\'}", "{\'address\': \'211-359 The Strand N, Oceanside, CA 92054, USA\', \'id\': 2090, \'day\': 1, \'name\': u\'Pier\'}", "{\'address\': \'1016-1024 Neptune Ave, Encinitas, CA 92024, USA\', \'id\': 2872, \'day\': 1, \'name\': u\'Encinitas\'}", "{\'address\': \'625 Pan American Rd E, San Diego, CA 92101, USA\', \'id\': 147, \'day\': 2, \'name\': u\'Balboa Park\'}", "{\'address\': \'1849-1863 Zoo Pl, San Diego, CA 92101, USA\', \'id\': 152, \'day\': 2, \'name\': u\'San Diego Zoo\'}", "{\'address\': \'701-817 Coast Blvd, La Jolla, CA 92037, USA\', \'id\': 148, \'day\': 2, \'name\': u\'La Jolla\'}", "{\'address\': \'10051-10057 Pebble Beach Dr, Santee, CA 92071, USA\', \'id\': 4630, \'day\': 2, \'name\': u\'Santee Lakes\'}", "{\'address\': \'Lake Murray Bike Path, La Mesa, CA 91942, USA\', \'id\': 4545, \'day\': 2, \'name\': u\'Lake Murray\'}", "{\'address\': \'4905 Mt Helix Dr, La Mesa, CA 91941, USA\', \'id\': 4544, \'day\': 2, \'name\': u\'Mt. Helix\'}", "{\'address\': \'1720 Melrose Ave, Chula Vista, CA 91911, USA\', \'id\': 1325, \'day\': 2, \'name\': u\'Thick-billed Kingbird\'}", "{\'address\': \'711 Basswood Ave, Imperial Beach, CA 91932, USA\', \'id\': 1326, \'day\': 2, \'name\': u\'Lesser Sand-Plover\'}"]',
-       3.0]
+       3.0, True]
     full_trip_table.username_id = full_trip_table.username_id.astype(int)
     full_trip_table.to_sql('full_trip_table',engine, if_exists = "replace")
     day_trip_locations_table.to_sql('day_trip_table',engine, if_exists = "replace")
     google_travel_time_table.to_sql('google_travel_time_table',engine, if_exists = "replace")
     poi_detail = pd.read_csv(poi_detail_path,index_col=0)
-    poi_detail.to_sql('poi_detail_table_v2',engine, index=True, if_exists = "replace")
+    poi_detail.to_sql('poi_detail_table',engine, index=True, if_exists = "replace")
     df_counties = pd.read_csv(df_counties_path,sep='|')
     df_counties_u = df_counties.drop('City alias',axis = 1).drop_duplicates()
     df_counties_u.columns = ["city","state_abb","state","county"]
@@ -58,19 +58,39 @@ def init_db_tables():
     cities_coords = cities_coords[['city', 'state','nation','coord0','coord1']].drop_duplicates()
     cities_coords.columns = [['city', 'state','nation','coord_lat','coord_long']]
     cities_coords.to_sql('all_cities_coords_table',engine, index=True, if_exists = "replace")
+    
     conn = psycopg2.connect(conn_str)
     cur = conn.cursor()
     cur.execute("ALTER TABLE all_cities_coords_table ADD PRIMARY KEY (index);")
-    cur.execute("ALTER TABLE poi_detail_table_v2 ADD PRIMARY KEY (index);")
+    cur.execute("ALTER TABLE poi_detail_table ADD PRIMARY KEY (index);")
     cur.execute("ALTER TABLE full_trip_table ADD PRIMARY KEY (index);")
     cur.execute("ALTER TABLE day_trip_table ADD PRIMARY KEY (index);")
     cur.execute("ALTER TABLE google_travel_time_table ADD PRIMARY KEY (id_field);")
     cur.execute("ALTER TABLE county_table ADD PRIMARY KEY (index);")
 
-    cur.execute("ALTER TABLE full_trip_table ADD CONSTRAINT fk_full_trip_user_name FOREIGN KEY (username_id) REFERENCES auth_user (id);")
+    # cur.execute("ALTER TABLE full_trip_table ADD CONSTRAINT fk_full_trip_user_name FOREIGN KEY (username_id) REFERENCES auth_user (id);")
+    
+    #make geom
+    cur.execute("ALTER TABLE poi_detail_table ADD COLUMN geom geometry(POINT,4326);")
+    cur.execute("UPDATE poi_detail_table SET geom = ST_SetSRID(ST_MakePoint(coord_long,coord_lat),4326);")
+    # cur.execute("CREATE INDEX idx_poi_geom ON poi_detail_table USING GIST(geom);")
 
+    #create better coord_table
+    cur.execute("""
+              create table city_state_coords_table as select a.*, b.state_abb 
+              from all_cities_coords_table as a left join 
+              (select distinct state, state_abb from county_table order by state_abb) as b 
+              on a.state = b.state order by a.index;
+      """)
+
+    cur.execute("update city_state_coords_table set state_abb = 'DC' where state_abb is null;")
+    cur.execute("delete from county_table where city = 'San Francisco' and county = 'SAN MATEO';")
     conn.commit()
     conn.close()
     print "finish init database"
+
+
 if __name__ == '__main__':
     init_db_tables()
+
+

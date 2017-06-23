@@ -2,19 +2,18 @@ import pandas as pd
 import psycopg2
 from sqlalchemy import create_engine
 import json
+
 with open('api_key_list.config') as key_file:
     api_key_list = json.load(key_file)
 conn_str = api_key_list["conn_str"]
 engine_str = api_key_list["engine"]
 engine = create_engine(engine_str)
 def init_outside_db_tables():
-    outside_trip_id = '-'.join([str('test'.upper().replace(' ','-')), str('test'.upper().replace(' ','-')), \
-                        'N'.upper(),str(int(True)), str(1)])
+    outside_trip_id = '-'.join([str('test'.upper().replace(' ', '-')), str('test'.upper().replace(' ', '-')), 'N'.upper(),str(int(True)), str(1)])
     outside_route_id = outside_trip_id + '-' + str(0)
-    outside_route_table = pd.DataFrame(columns =['outside_route_id', 'full_day', 'regular', 'origin_city', \
-                        'origin_state', 'target_direction', 'details', 'event_type', 'event_ids', 'route_num', 'route_theme'])
+    outside_route_table = pd.DataFrame(columns =['outside_route_id', 'full_day', 'regular', 'origin_city', 'origin_state', 'target_direction', 'details', 'event_type', 'event_ids', 'route_num', 'route_theme'])
     outside_trip_table = pd.DataFrame(columns = ['username_id', 'outside_trip_id', 'outside_route_ids', 'event_id_lst', 'origin_city', \
-                        'origin_state', 'target_direction', 'n_routes', 'regular', 'full_day', 'details'])
+                        'origin_state', 'target_direction', 'n_routes', 'regular', 'full_day', 'details', 'visible'])
     google_city_to_poi_table = pd.DataFrame(columns = ['city_to_poi_id', 'city_id', 'origin_city', 'origin_state', \
                         'orig_name','dest_name', 'dest_poi_id', 'start_coord_lat','start_coord_long','dest_coord_lat',\
                         'dest_coord_long','orig_coords','dest_coords', 'google_driving_url', 'google_walking_url',\
@@ -22,7 +21,8 @@ def init_outside_db_tables():
     outside_route_table.loc[0] = [outside_route_id, True, True, 'Test', 'Test', 'N', ["{'address': '15500 San Pasqual Valley Rd, Escondido, CA 92027, USA', 'id': 2259, 'day': 0, 'name': u'San Diego Zoo Safari Park'}", "{'address': 'Safari Walk, Escondido, CA 92027, USA', 'id': 2260, 'day': 0, 'name': u'Meerkat'}", "{'address': '1999 Citracado Parkway, Escondido, CA 92029, USA', 'id': 3486, 'day': 0, 'name': u'Stone'}", "{'address': '1999 Citracado Parkway, Escondido, CA 92029, USA', 'id': 3487, 'day': 0, 'name': u'Stone Brewery'}", "{'address': 'Mount Woodson Trail, Poway, CA 92064, USA', 'id': 4951, 'day': 0, 'name': u'Lake Poway'}", "{'address': '17130 Mt Woodson Rd, Ramona, CA 92065, USA', 'id': 4953, 'day': 0, 'name': u'Potato Chip Rock'}", "{'address': '17130 Mt Woodson Rd, Ramona, CA 92065, USA', 'id': 4952, 'day': 0, 'name': u'Mt. Woodson'}"],
        'big','[2259, 2260,3486,3487,4951,4953,4952]', 0, 'shopping']
     outside_trip_table.loc[0] = [1, outside_trip_id, '[outside_route_id]', '[2259, 2260,3486,3487,4951,4953,4952]', \
-                                'Test','Test','N',1,True, True, ["{'address': '15500 San Pasqual Valley Rd, Escondido, CA 92027, USA', 'id': 2259, 'day': 0, 'name': u'San Diego Zoo Safari Park'}", "{'address': 'Safari Walk, Escondido, CA 92027, USA', 'id': 2260, 'day': 0, 'name': u'Meerkat'}", "{'address': '1999 Citracado Parkway, Escondido, CA 92029, USA', 'id': 3486, 'day': 0, 'name': u'Stone'}", "{'address': '1999 Citracado Parkway, Escondido, CA 92029, USA', 'id': 3487, 'day': 0, 'name': u'Stone Brewery'}", "{'address': 'Mount Woodson Trail, Poway, CA 92064, USA', 'id': 4951, 'day': 0, 'name': u'Lake Poway'}", "{'address': '17130 Mt Woodson Rd, Ramona, CA 92065, USA', 'id': 4953, 'day': 0, 'name': u'Potato Chip Rock'}", "{'address': '17130 Mt Woodson Rd, Ramona, CA 92065, USA', 'id': 4952, 'day': 0, 'name': u'Mt. Woodson'}"]]
+                                'Test','Test','N',1,True, True, ["{'address': '15500 San Pasqual Valley Rd, Escondido, CA 92027, USA', 'id': 2259, 'day': 0, 'name': u'San Diego Zoo Safari Park'}", "{'address': 'Safari Walk, Escondido, CA 92027, USA', 'id': 2260, 'day': 0, 'name': u'Meerkat'}", "{'address': '1999 Citracado Parkway, Escondido, CA 92029, USA', 'id': 3486, 'day': 0, 'name': u'Stone'}", "{'address': '1999 Citracado Parkway, Escondido, CA 92029, USA', 'id': 3487, 'day': 0, 'name': u'Stone Brewery'}", "{'address': 'Mount Woodson Trail, Poway, CA 92064, USA', 'id': 4951, 'day': 0, 'name': u'Lake Poway'}", "{'address': '17130 Mt Woodson Rd, Ramona, CA 92065, USA', 'id': 4953, 'day': 0, 'name': u'Potato Chip Rock'}", "{'address': '17130 Mt Woodson Rd, Ramona, CA 92065, USA', 'id': 4952, 'day': 0, 'name': u'Mt. Woodson'}"], True]
+    
     google_city_to_poi_table.loc[0] = [999999, 999999, 'Test','Test','Test','Test', 2871.0, 33.047769600024424, -117.29692141333341, \
                                     33.124079753475236, -117.3177652511278, '33.0477696,-117.296921413', '33.1240797535,-117.317765251',\
                                     'https://maps.googleapis.com/maps/api/distancematrix/json?origins=33.0477696,-117.296921413&destinations=33.1240797535,-117.317765251&mode=driving&language=en-EN&sensor=false&key=AIzaSyDJh9EWCA_v0_B3SvjzjUA3OSVYufPJeGE',
