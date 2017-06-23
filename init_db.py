@@ -67,7 +67,7 @@ def init_db_tables():
     cur.execute("ALTER TABLE day_trip_table ADD PRIMARY KEY (index);")
     cur.execute("ALTER TABLE google_travel_time_table ADD PRIMARY KEY (id_field);")
     cur.execute("ALTER TABLE county_table ADD PRIMARY KEY (index);")
-    cur.execute("ALTER TABLE full_trip_table ADD CONSTRAINT fk_full_trip_user_name FOREIGN KEY (username_id) REFERENCES auth_user (id);")
+    # cur.execute("ALTER TABLE full_trip_table ADD CONSTRAINT fk_full_trip_user_name FOREIGN KEY (username_id) REFERENCES auth_user (id);")
     
     #make geom
     cur.execute("ALTER TABLE poi_detail_table ADD COLUMN geom geometry(POINT,4326);")
@@ -76,12 +76,12 @@ def init_db_tables():
     # cur.execute("CREATE INDEX idx_poi_geom ON poi_detail_table USING GIST(geom);")
 
     #create better coord_table
-    cur.execute("""
-              create table city_state_coords_table as select a.*, b.state_abb 
-              from all_cities_coords_table as a left join 
-              (select distinct state, state_abb from county_table order by state_abb) as b 
-              on a.state = b.state order by a.index;
-      """)
+    # cur.execute("""
+    #           create table city_state_coords_table as select a.*, b.state_abb 
+    #           from all_cities_coords_table as a left join 
+    #           (select distinct state, state_abb from county_table order by state_abb) as b 
+    #           on a.state = b.state order by a.index;
+    #   """)
 
     cur.execute("update city_state_coords_table set state_abb = 'DC' where state_abb is null;")
     cur.execute("delete from county_table where city = 'San Francisco' and county = 'SAN MATEO';")

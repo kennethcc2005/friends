@@ -10,25 +10,31 @@ conn_str = api_key_list["conn_str"]
 
 conn = psycopg2.connect(conn_str)
 cur = conn.cursor()
-cur.execute("select state, city from county_table;")
+cur.execute("SELECT state, city FROM county_table;")
 c = cur.fetchall()
-print len(c)
+print "total : ", len(c)
 
-cur.execute("select max(index) from full_trip_table;")
+cur.execute("SELECT max(index) FROM full_trip_table;")
 full_trip_index = cur.fetchone()[0]
-print full_trip_index
-cur.execute("select county, state from full_trip_table where index='%s';"%(full_trip_index)) 
-location = cur.fetchone()       
-print location
-cur.execute("select state, city from county_table where county ='%s' and state='%s';"%(location[0],location[1]))
-last_stop_location = cur.fetchall()[0]
-print last_stop_location
-last_stop =  c.index(last_stop_location)
-print last_stop
+print "data in full trip: ", full_trip_index
+if full_trip_index == 0:
+    cur = conn.cursor()
+    cur.execute("SELECT state, city FROM county_table LIMIT 1;")
+    location = cur.fetchall()[0]
+    print "first location : ", location
+else:
+    cur.execute("SELECT county, state FROM full_trip_table WHERE index='%s';"%(full_trip_index)) 
+    county_location = cur.fetchone()       
+    print "last time stop at county and state : ", county_location
+    cur.execute("SELECT state, city FROM county_table WHERE county ='%s' AND state='%s';"%(county_location[0], county_location[1]))
+    location = cur.fetchall()[0]
+    print "last time stop at state, city: ", location
+last_stop = c.index(location)
+print "num of city done from last stop: ", last_stop
 conn.close()
 
 Not_data_for_county=[]
-for x in range(last_stop-10,len(c)):
+for x in range(last_stop,len(c)):
 # for x in range(len(c)):
     state, city = c[x]
     # ('California', 'Newbury Park'), ('Alaska', 'Chignik Lake') have problem 
