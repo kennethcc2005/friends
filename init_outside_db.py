@@ -13,7 +13,7 @@ def init_outside_db_tables():
     outside_route_id = outside_trip_id + '-' + str(0)
     outside_route_table = pd.DataFrame(columns =['outside_route_id', 'full_day', 'regular', 'origin_city', 'origin_state', 'target_direction', 'details', 'event_type', 'event_ids', 'route_num', 'route_theme'])
     outside_trip_table = pd.DataFrame(columns = ['username_id', 'outside_trip_id', 'outside_route_ids', 'event_id_lst', 'origin_city', \
-                        'origin_state', 'target_direction', 'n_routes', 'regular', 'full_day', 'details', 'visible'])
+                        'origin_state', 'target_direction', 'n_routes', 'regular', 'full_day', 'outside_trip_details', 'visible'])
     google_city_to_poi_table = pd.DataFrame(columns = ['city_to_poi_id', 'city_id', 'origin_city', 'origin_state', \
                         'orig_name','dest_name', 'dest_poi_id', 'start_coord_lat','start_coord_long','dest_coord_lat',\
                         'dest_coord_long','orig_coords','dest_coords', 'google_driving_url', 'google_walking_url',\
