@@ -627,6 +627,7 @@ def clean_details(details_theme):
 
 def check_state(origin_state):
     if not helpers.check_valid_state(origin_state):
-        origin_state = abb2state[origin_state]
+        origin_state = abb2state[str(origin_state).upper()]
     return origin_state
+
 
