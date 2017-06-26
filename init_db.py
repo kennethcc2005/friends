@@ -3,7 +3,6 @@ import psycopg2
 import os
 import json
 from sqlalchemy import create_engine
-
 path = os.getcwd()
 with open('api_key_list.config') as key_file:
     api_key_list = json.load(key_file)
@@ -19,7 +18,7 @@ poi_detail_path = path+'/poi_detail_table_final_v1.csv'
 
 
 def init_db_tables():
-    full_trip_table = pd.DataFrame(columns =['username_id', 'full_trip_id', 'trip_location_ids', 'regular', 'county', 'state', 'details', 'n_days','visible'])
+    full_trip_table = pd.DataFrame(columns =['username_id', 'full_trip_id', 'trip_location_ids', 'regular', 'county', 'state', 'details', 'n_days', 'visible'])
 
     day_trip_locations_table = pd.DataFrame(columns =['trip_locations_id','full_day', 'regular', 'county', 'state','details','event_type','event_ids'])
 
@@ -68,7 +67,11 @@ def init_db_tables():
     cur.execute("ALTER TABLE google_travel_time_table ADD PRIMARY KEY (id_field);")
     cur.execute("ALTER TABLE county_table ADD PRIMARY KEY (index);")
     # cur.execute("ALTER TABLE full_trip_table ADD CONSTRAINT fk_full_trip_user_name FOREIGN KEY (username_id) REFERENCES auth_user (id);")
-    
+    cur.execute("ALTER TABLE full_trip_table ADD COLUMN day_created TIMESTAMP;")
+    cur.execute("update full_trip_table set day_created = now()")
+    cur.execute("ALTER TABLE full_trip_table ADD COLUMN day_modified TIMESTAMP;")
+    cur.execute("update full_trip_table set day_modified = now()")
+
     #make geom
     cur.execute("ALTER TABLE poi_detail_table ADD COLUMN geom geometry(POINT,4326);")
     cur.execute("UPDATE poi_detail_table SET geom = ST_SetSRID(ST_MakePoint(coord_long,coord_lat),4326);")
