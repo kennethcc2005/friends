@@ -14,7 +14,7 @@ engine = create_engine(api_key_list["engine"])
 
 df_counties_path = path+'/us_cities_states_counties.csv'
 df_city_coords_path = path+'/all_cities_coords.csv'
-poi_detail_path = path+'/poi_detail_table_final_v1.csv'
+poi_detail_path = path+'/poi_detail_table_final_v2.csv'
 
 
 def init_db_tables():
@@ -60,6 +60,7 @@ def init_db_tables():
     
     conn = psycopg2.connect(conn_str)
     cur = conn.cursor()
+
     cur.execute("ALTER TABLE all_cities_coords_table ADD PRIMARY KEY (index);")
     cur.execute("ALTER TABLE poi_detail_table ADD PRIMARY KEY (index);")
     cur.execute("ALTER TABLE full_trip_table ADD PRIMARY KEY (index);")
@@ -78,7 +79,7 @@ def init_db_tables():
     
     # cur.execute("CREATE INDEX idx_poi_geom ON poi_detail_table USING GIST(geom);")
 
-    #create better coord_table
+    # create better coord_table
     # cur.execute("""
     #           create table city_state_coords_table as select a.*, b.state_abb 
     #           from all_cities_coords_table as a left join 
