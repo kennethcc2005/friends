@@ -77,7 +77,7 @@ def init_db_tables():
     cur.execute("ALTER TABLE poi_detail_table ADD COLUMN geom geometry(POINT,4326);")
     cur.execute("UPDATE poi_detail_table SET geom = ST_SetSRID(ST_MakePoint(coord_long,coord_lat),4326);")
     
-    # cur.execute("CREATE INDEX idx_poi_geom ON poi_detail_table USING GIST(geom);")
+    cur.execute("CREATE INDEX idx_poi_geom ON poi_detail_table USING GIST(geom);")
 
     # create better coord_table
     # cur.execute("""

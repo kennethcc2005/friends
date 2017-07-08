@@ -168,7 +168,7 @@ if __name__ == '__main__':
     # print dir(outside_helpers)
 
     direct = ["E","S","W","N"]
-    origin_city = 'San Jose'
+    origin_city = 'San Francisco'
     origin_state = 'California'
     print origin_city, origin_state
     for target_direction in direct:

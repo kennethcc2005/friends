@@ -118,7 +118,7 @@ def switch_event_list(full_trip_id, trip_locations_id, switch_event_id, switch_e
     name, city, county, state,coord_lat, coord_long,poi_rank, adjusted_normal_time_spent = cur.fetchone()
     event_type = event_type_time_spent(adjusted_normal_time_spent)
     avialable_lst = ajax_available_events(county, state)
-    cur.execute("SELECT trip_location_ids,details FROM full_trip_table WHERE full_trip_id=%s;" % (full_trip_id))
+    cur.execute("SELECT trip_location_ids, details FROM full_trip_table WHERE full_trip_id=%s;" % (full_trip_id))
     full_trip_detail = cur.fetchone()
     full_trip_detail = ast.literal_eval(full_trip_detail)
     full_trip_ids = [ast.literal_eval(item)['id'] for item in full_trip_detail]
