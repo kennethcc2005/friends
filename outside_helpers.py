@@ -231,20 +231,23 @@ def travel_outside_with_direction(origin_city, origin_state, target_direction, f
     for coords in item:
         if check_direction(start_lat, start_long, coords[1], coords[2], target_direction):
             poi_info.append(coords)
+
+    ## add those into table
+
     return id_, start_lat, start_long, np.array(poi_info)
 
 def check_outside_trip_id(outside_trip_id, debug):
     '''
     Check outside trip id exist or not.  
     '''
-    conn = psycopg2.connect(conn_str)  
+    conn = psycopg2.connect(conn_str)
     cur = conn.cursor()  
     cur.execute("SELECT outside_trip_id FROM outside_trip_table WHERE outside_trip_id = '%s';" % (outside_trip_id))
     a = cur.fetchone()
     # print 'outside stuff id', a, bool(a)
     conn.close()
     if bool(a):
-        if not debug: 
+        if not debug:
             return a[0]
         else:
             return True
