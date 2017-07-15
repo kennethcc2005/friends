@@ -7,6 +7,8 @@ logic bug, now showing the reset and comfirm button when users click the resugge
 
 yosemite not find at all
 
+Austin TX 4 day -day1 error on map
+
 will need api views for outside poi suggest, poi add and poi delete
 those functions needs different api than the full trip ones
 
