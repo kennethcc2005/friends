@@ -1,0 +1,5 @@
+Note for the futuer:
+
+post_post may need to reference to need full_trip & day_trip table
+or 
+change to api back to use old full_trip & day_trip table.
